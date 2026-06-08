@@ -1,0 +1,36 @@
+{
+	"name": "codebase-assistant-backend",
+	"version": "1.0.0",
+	"private": true,
+	"type": "commonjs",
+	"scripts": {
+		"dev": "tsx watch src/index.ts",
+		"build": "tsc",
+		"start": "node dist/index.js"
+	},
+	"devDependencies": {
+		"@types/cors": "^2.8.19",
+		"@types/express": "^5.0.6",
+		"@types/multer": "^2.1.0",
+		"@types/node": "^25.9.2",
+		"tsx": "^4.22.4",
+		"typescript": "^6.0.3"
+	},
+	"dependencies": {
+		"@huggingface/inference": "^4.13.18",
+		"@langchain/community": "^1.1.29",
+		"@langchain/core": "^1.1.48",
+		"@langchain/groq": "^1.2.1",
+		"@pinecone-database/pinecone": "^7.2.0",
+		"axios": "^1.17.0",
+		"cors": "^2.8.6",
+		"dotenv": "^17.4.2",
+		"express": "^5.2.1",
+		"langchain": "^1.4.4",
+		"multer": "^2.1.1",
+		"simple-git": "^3.36.0",
+		"ts-morph": "^28.0.0",
+		"uuid": "^14.0.0",
+		"zod": "^4.4.3"
+	}
+}
