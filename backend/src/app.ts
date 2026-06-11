@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
 
+import chatRoutes from "./routes/chat.routes";
 import repositoryRoutes from "./routes/repository.routes";
 import { errorHandler } from "./middlewares/error-handler";
 import { ApiError } from "./utils/api-error";
@@ -22,6 +23,7 @@ app.get("/health", (_request, response) => {
 });
 
 app.use("/api/v1/repos", repositoryRoutes);
+app.use("/api/v1/repos/:namespace/chat", chatRoutes);
 
 app.use((_request, _response, next) => {
 	next(new ApiError(404, "Route not found"));

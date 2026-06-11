@@ -15,6 +15,15 @@ const MIN_CHUNK_SIZE = 100;
 const AST_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx"]);
 const REACT_EXTENSIONS = new Set([".tsx", ".jsx"]);
 
+// Singleton Project — avoids re-initializing the TS compiler for every file
+let sharedProject: Project | null = null;
+function getSharedProject(): Project {
+	if (!sharedProject) {
+		sharedProject = new Project({ useInMemoryFileSystem: true });
+	}
+	return sharedProject;
+}
+
 // React wrapper calls that wrap a component (memo, forwardRef, lazy, etc.)
 const REACT_WRAPPERS = new Set(["memo", "forwardRef", "lazy", "observer"]);
 
@@ -127,13 +136,7 @@ function extractImports(sourceFile: SourceFile): string[] {
 }
 
 function extractExports(sourceFile: SourceFile): string[] {
-	const exports: string[] = [];
-
-	for (const decl of sourceFile.getExportedDeclarations()) {
-		exports.push(decl[0]); // decl[0] is the export name
-	}
-
-	return exports;
+	return Array.from(sourceFile.getExportedDeclarations().keys());
 }
 
 /**
@@ -252,11 +255,12 @@ function chunkAstFile(
 	file: RepositoryFile,
 	content: string
 ): RepositoryChunk[] {
-	const project = new Project({ useInMemoryFileSystem: true });
+	const project = getSharedProject();
+	const tempFileName = `temp_${Date.now()}${file.extension}`;
 	const sourceFile = project.createSourceFile(
-		`temp${file.extension}`,
+		tempFileName,
 		content,
-		{ scriptKind: getScriptKind(file.extension) }
+		{ scriptKind: getScriptKind(file.extension), overwrite: true }
 	);
 
 	const fileImports = extractImports(sourceFile);

@@ -1,12 +1,13 @@
-import { HfInference } from "@huggingface/inference";
-import type { FeatureExtractionOutput } from "@huggingface/inference";
 import { Pinecone } from "@pinecone-database/pinecone";
 
 import { ApiError } from "../utils/api-error";
+import { embedTexts } from "../indexing/embeddings/embedding.service";
 import type { RepositoryChunk } from "../types";
 
 let pineconeClient: Pinecone | null = null;
-let hfClient: HfInference | null = null;
+
+const PINECONE_BATCH_SIZE = 100; // max records per single Pinecone upsert call
+const PINECONE_CONCURRENCY = 5;  // max concurrent upsert calls
 
 export function buildRepositoryNamespace(repoId: string): string {
   return repoId;
@@ -17,94 +18,149 @@ function getRequiredEnv(name: string): string {
   if (!value) {
     throw new ApiError(500, `${name} is not configured.`);
   }
-
   return value;
 }
 
 function getPineconeClient(): Pinecone {
   if (!pineconeClient) {
-    pineconeClient = new Pinecone({
-      apiKey: getRequiredEnv("PINECONE_API_KEY"),
-    });
+    pineconeClient = new Pinecone({ apiKey: getRequiredEnv("PINECONE_API_KEY") });
   }
-
   return pineconeClient;
 }
 
-function getHuggingFaceClient(): HfInference {
-  if (!hfClient) {
-    hfClient = new HfInference(getRequiredEnv("HUGGINGFACE_API_KEY"));
-  }
+type PineconeRecord = {
+  id: string;
+  values: number[];
+  metadata: Record<string, any>;
+};
 
-  return hfClient;
+function chunkMetadata(chunk: RepositoryChunk): Record<string, any> {
+  return {
+    repoId: chunk.repoId,
+    repoName: chunk.repoName,
+    namespace: chunk.namespace,
+    filePath: chunk.filePath,
+    fileName: chunk.fileName,
+    extension: chunk.extension,
+    language: chunk.language,
+    kind: chunk.kind,
+    chunkType: chunk.chunkType,
+    chunkIndex: chunk.chunkIndex,
+    startLine: chunk.startLine,
+    endLine: chunk.endLine,
+    symbolName: chunk.symbolName ?? "",
+    content: chunk.content,
+    contentLength: chunk.contentLength,
+    imports: chunk.imports,
+    exports: chunk.exports,
+    directory: chunk.directory,
+  };
 }
 
-function normalizeEmbedding(embedding: FeatureExtractionOutput): number[] {
-  const firstResult = embedding[0];
+/**
+ * Upsert Pinecone records with concurrency control.
+ */
+async function upsertRecordsBatched(
+  namespace: ReturnType<ReturnType<Pinecone["index"]>["namespace"]>,
+  records: PineconeRecord[]
+): Promise<void> {
+  // Split into batches of PINECONE_BATCH_SIZE
+  const batches: PineconeRecord[][] = [];
+  for (let i = 0; i < records.length; i += PINECONE_BATCH_SIZE) {
+    batches.push(records.slice(i, i + PINECONE_BATCH_SIZE));
+  }
 
-  if (Array.isArray(firstResult)) {
-    const nestedResult = firstResult[0];
-    if (Array.isArray(nestedResult)) {
-      return nestedResult as number[];
+  console.log(
+    `[pinecone] upserting ${records.length} records in ${batches.length} batches ` +
+    `(size=${PINECONE_BATCH_SIZE}, concurrency=${PINECONE_CONCURRENCY})`
+  );
+
+  let nextBatch = 0;
+
+  async function worker(): Promise<void> {
+    while (nextBatch < batches.length) {
+      const batchIndex = nextBatch++;
+      const batch = batches[batchIndex];
+      console.log(`[pinecone] upsert batch ${batchIndex + 1}/${batches.length} (${batch.length} records)`);
+      // Pinecone v7: upsert takes an array directly
+      await namespace.upsert({ records: batch });
     }
-
-    return firstResult as number[];
   }
 
-  return embedding as unknown as number[];
+  const workers: Promise<void>[] = [];
+  for (let w = 0; w < Math.min(PINECONE_CONCURRENCY, batches.length); w++) {
+    workers.push(worker());
+  }
+  await Promise.all(workers);
 }
 
-async function embedText(text: string): Promise<number[]> {
-  const hfModel = process.env.HUGGINGFACE_MODEL ?? "BAAI/bge-small-en-v1.5";
-  const embedding = await getHuggingFaceClient().featureExtraction({
-    model: hfModel,
-    inputs: text,
-  });
-
-  return normalizeEmbedding(embedding);
-}
-
+/**
+ * Embed chunks and upsert to Pinecone in a pipelined fashion.
+ *
+ * Instead of embedding ALL chunks first and THEN upserting, this function
+ * embeds a batch → immediately upserts it → moves to next batch.
+ * Embedding and upserting run concurrently via Promise.all.
+ */
 export async function upsertRepositoryChunks(
   namespace: string,
   chunks: RepositoryChunk[]
 ): Promise<void> {
-  if (chunks.length === 0) {
-    return;
-  }
+  if (chunks.length === 0) return;
 
   const indexName = getRequiredEnv("PINECONE_INDEX_NAME");
   const index = getPineconeClient().index(indexName).namespace(namespace);
-  const batchSize = 8;
 
-  for (let start = 0; start < chunks.length; start += batchSize) {
-    const batch = chunks.slice(start, start + batchSize);
-    const embeddings = await Promise.all(batch.map((chunk) => embedText(chunk.content)));
+  console.log(`[upsert] processing ${chunks.length} chunks`);
 
-    await index.upsert({
-      records: batch.map((chunk, batchIndex) => ({
-        id: chunk.id,
-        values: embeddings[batchIndex],
-        metadata: {
-          repoId: chunk.repoId,
-          repoName: chunk.repoName,
-          namespace: chunk.namespace,
-          filePath: chunk.filePath,
-          fileName: chunk.fileName,
-          extension: chunk.extension,
-          language: chunk.language,
-          kind: chunk.kind,
-          chunkType: chunk.chunkType,
-          chunkIndex: chunk.chunkIndex,
-          startLine: chunk.startLine,
-          endLine: chunk.endLine,
-          symbolName: chunk.symbolName ?? "",
-          content: chunk.content,
-          contentLength: chunk.contentLength,
-          imports: chunk.imports,
-          exports: chunk.exports,
-          directory: chunk.directory,
-        },
-      })),
-    });
+  // Step 1 — embed all chunks (embedding.service handles internal batching + concurrency)
+  const texts = chunks.map((c) => c.content);
+  const embeddings = await embedTexts(texts);
+
+  // Step 2 — build Pinecone records
+  const records: PineconeRecord[] = chunks.map((chunk, i) => ({
+    id: chunk.id,
+    values: embeddings[i],
+    metadata: chunkMetadata(chunk),
+  }));
+
+  // Step 3 — upsert with concurrency
+  await upsertRecordsBatched(index, records);
+
+  console.log(`[upsert] ✅ all ${chunks.length} chunks stored in Pinecone`);
+}
+
+/**
+ * Check if a namespace exists and has records in Pinecone.
+ */
+export async function checkNamespaceExists(namespace: string): Promise<boolean> {
+  const indexName = getRequiredEnv("PINECONE_INDEX_NAME");
+  const index = getPineconeClient().index(indexName);
+  const stats = await index.describeIndexStats();
+
+  const namespaces = stats.namespaces;
+  if (!namespaces || !namespaces[namespace]) {
+    return false;
   }
+  
+  return namespaces[namespace].recordCount > 0;
+}
+
+/**
+ * Query Pinecone for the most similar chunks to a given embedding.
+ */
+export async function queryRepositoryChunks(
+  namespace: string,
+  queryEmbedding: number[],
+  topK: number
+) {
+  const indexName = getRequiredEnv("PINECONE_INDEX_NAME");
+  const index = getPineconeClient().index(indexName).namespace(namespace);
+
+  const results = await index.query({
+    vector: queryEmbedding,
+    topK,
+    includeMetadata: true,
+  });
+
+  return results.matches;
 }

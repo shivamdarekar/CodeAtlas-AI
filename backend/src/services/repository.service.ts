@@ -6,7 +6,7 @@ import simpleGit from "simple-git";
 
 import { ApiError } from "../utils/api-error";
 import { buildRepositoryNamespace } from "../vectorstore/pinecone.service";
-import type { RepositoryIntakeInput, RepositoryMetadata } from "../types";
+import type { IndexedRepository, RepositoryIntakeInput, RepositoryMetadata } from "../types";
 import { indexRepository } from "./indexing.service";
 
 interface ParsedGitHubRepository {
@@ -44,7 +44,7 @@ function parseGitHubRepositoryUrl(repoUrl: string): ParsedGitHubRepository {
 
 export async function analyzeRepository(
   input: RepositoryIntakeInput
-): Promise<RepositoryMetadata> {
+): Promise<IndexedRepository> {
   const repository = parseGitHubRepositoryUrl(input.repoUrl);
   const repoId = randomUUID();
   const namespace = buildRepositoryNamespace(repoId);
@@ -68,7 +68,7 @@ export async function analyzeRepository(
     });
   }
 
-  const repositoryMetadata = {
+  const repositoryMetadata: RepositoryMetadata = {
     repoId,
     namespace,
     owner: repository.owner,
@@ -80,5 +80,12 @@ export async function analyzeRepository(
     createdAt: new Date().toISOString(),
   };
 
-  return indexRepository(repositoryMetadata);
+  try {
+    return await indexRepository(repositoryMetadata);
+  } finally {
+    // Clean up cloned repo to prevent disk from filling up
+    fs.rm(localPath, { recursive: true, force: true }).catch((err) =>
+      console.error(`[cleanup] failed to remove ${localPath}:`, err)
+    );
+  }
 }

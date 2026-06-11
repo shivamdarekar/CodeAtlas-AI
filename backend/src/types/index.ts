@@ -75,3 +75,14 @@ export interface RepositoryIndexSummary {
 export interface IndexedRepository extends RepositoryMetadata {
 	indexing: RepositoryIndexSummary;
 }
+
+export interface ChatSource {
+	filePath: string;
+	symbolName: string;
+	score: number;
+}
+
+export interface ChatResponse {
+	answer: string;
+	sources: ChatSource[];
+}
