@@ -53,6 +53,10 @@ function chunkMetadata(chunk: RepositoryChunk): Record<string, any> {
     contentLength: chunk.contentLength,
     imports: chunk.imports,
     exports: chunk.exports,
+    functionCalls: chunk.functionCalls || [],
+    componentDependencies: chunk.componentDependencies || [],
+    hooksUsed: chunk.hooksUsed || [],
+    apiCalls: chunk.apiCalls || [],
     directory: chunk.directory,
   };
 }
@@ -160,6 +164,38 @@ export async function queryRepositoryChunks(
     vector: queryEmbedding,
     topK,
     includeMetadata: true,
+  });
+
+  return results.matches;
+}
+
+/**
+ * Fetch specific chunks by their symbol names without a vector search.
+ * Useful for graph-based tracing (e.g. following function calls).
+ */
+export async function fetchChunksBySymbols(
+  namespace: string,
+  symbols: string[]
+) {
+  if (!symbols || symbols.length === 0) return [];
+
+  const indexName = getRequiredEnv("PINECONE_INDEX_NAME");
+  const index = getPineconeClient().index(indexName).namespace(namespace);
+
+  // We have to pass a dummy vector because Pinecone 'query' requires it, 
+  // or we can use the Pinecone 'query' with topK and filter if we pass a dummy.
+  // Wait, in Pinecone Serverless you can query just by filter using topK if you provide a dummy vector of the correct dimension.
+  // Our dimension is 384 (BAAI/bge-small-en-v1.5).
+  // Use a small non-zero value to prevent "Vector contains only zeros" error if index metric is cosine.
+  const dummyVector = new Array(384).fill(0.0001);
+
+  const results = await index.query({
+    vector: dummyVector,
+    topK: symbols.length * 2, // get a bit more just in case of multiple chunks per symbol
+    includeMetadata: true,
+    filter: {
+      symbolName: { $in: symbols }
+    }
   });
 
   return results.matches;

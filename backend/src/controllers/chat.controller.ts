@@ -10,7 +10,7 @@ export const chatController = asyncHandler(
     const namespace = request.params.namespace as string;
     const payload = chatRequestSchema.parse(request.body);
 
-    const result = await askQuestion(namespace, payload.query);
+    const result = await askQuestion(namespace, payload.query, payload.mode);
 
     return response.status(200).json(
       new ApiResponse(200, "Chat response generated successfully.", result)

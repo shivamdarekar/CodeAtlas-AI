@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import path from "path";
 
 import simpleGit from "simple-git";
+import { rimraf } from "rimraf";
 
 import { ApiError } from "../utils/api-error";
 import { buildRepositoryNamespace } from "../vectorstore/pinecone.service";
@@ -84,8 +85,11 @@ export async function analyzeRepository(
     return await indexRepository(repositoryMetadata);
   } finally {
     // Clean up cloned repo to prevent disk from filling up
-    fs.rm(localPath, { recursive: true, force: true }).catch((err) =>
-      console.error(`[cleanup] failed to remove ${localPath}:`, err)
-    );
+    try {
+      await rimraf(localPath, { preserveRoot: false });
+      console.log(`[cleanup] ✅ Successfully removed temporary directory ${localPath}`);
+    } catch (err) {
+      console.error(`[cleanup] ❌ Failed to remove ${localPath}:`, err);
+    }
   }
 }
