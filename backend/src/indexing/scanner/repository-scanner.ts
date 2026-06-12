@@ -5,6 +5,7 @@ import type { RepositoryFile } from "../../types";
 import {
 	getRepositoryFileDescriptor,
 	shouldIgnoreDirectory,
+	shouldIgnoreFile,
 } from "../../utils/file-utils";
 
 async function walkRepository(
@@ -15,9 +16,8 @@ async function walkRepository(
 	const entries = await fs.readdir(currentPath, { withFileTypes: true });
 
 	for (const entry of entries) {
-		if (shouldIgnoreDirectory(entry.name)) {
-			continue;
-		}
+		if (shouldIgnoreDirectory(entry.name)) continue;
+		if (!entry.isDirectory() && shouldIgnoreFile(entry.name)) continue;
 
 		const absolutePath = path.join(currentPath, entry.name);
 
@@ -35,14 +35,13 @@ async function walkRepository(
 			continue;
 		}
 
-		const stats = await fs.stat(absolutePath);
 		files.push({
 			absolutePath,
 			relativePath: path.relative(rootPath, absolutePath),
 			extension: path.extname(absolutePath).toLowerCase(),
 			language: descriptor.language,
 			kind: descriptor.kind,
-			size: stats.size,
+			size: 0, // populated during file read
 		});
 	}
 }

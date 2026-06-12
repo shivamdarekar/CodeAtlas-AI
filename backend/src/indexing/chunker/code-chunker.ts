@@ -15,6 +15,15 @@ const MIN_CHUNK_SIZE = 100;
 const AST_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx"]);
 const REACT_EXTENSIONS = new Set([".tsx", ".jsx"]);
 
+// Singleton Project — avoids re-initializing the TS compiler for every file
+let sharedProject: Project | null = null;
+function getSharedProject(): Project {
+	if (!sharedProject) {
+		sharedProject = new Project({ useInMemoryFileSystem: true });
+	}
+	return sharedProject;
+}
+
 // React wrapper calls that wrap a component (memo, forwardRef, lazy, etc.)
 const REACT_WRAPPERS = new Set(["memo", "forwardRef", "lazy", "observer"]);
 
@@ -33,6 +42,10 @@ interface ChunkSeed {
 	content: string;
 	imports?: string[];
 	exports?: string[];
+	functionCalls?: string[];
+	componentDependencies?: string[];
+	hooksUsed?: string[];
+	apiCalls?: string[];
 	directory?: string;
 }
 
@@ -72,6 +85,10 @@ function createChunk(
 		contentLength: content.length,
 		imports: seed.imports ?? [],
 		exports: seed.exports ?? [],
+		functionCalls: seed.functionCalls ?? [],
+		componentDependencies: seed.componentDependencies ?? [],
+		hooksUsed: seed.hooksUsed ?? [],
+		apiCalls: seed.apiCalls ?? [],
 		directory: seed.directory ?? path.dirname(file.relativePath),
 	};
 }
@@ -127,13 +144,76 @@ function extractImports(sourceFile: SourceFile): string[] {
 }
 
 function extractExports(sourceFile: SourceFile): string[] {
-	const exports: string[] = [];
+	return Array.from(sourceFile.getExportedDeclarations().keys());
+}
 
-	for (const decl of sourceFile.getExportedDeclarations()) {
-		exports.push(decl[0]); // decl[0] is the export name
+const IGNORE_CALLS = new Set([
+  "Math", "Object", "Array", "String", "Number", "Boolean", "JSON", "Date",
+  "parseFloat", "parseInt", "setTimeout", "setInterval", "console", "Promise",
+  "Error", "window", "document", "localStorage", "sessionStorage", "formatFileSize"
+]);
+
+/**
+ * Extracts function calls, hooks, API calls, and component dependencies.
+ */
+function extractASTMetadata(node: any): { functionCalls: string[], componentDependencies: string[], hooksUsed: string[], apiCalls: string[] } {
+	if (!node || typeof node.getDescendantsOfKind !== "function") {
+		return { functionCalls: [], componentDependencies: [], hooksUsed: [], apiCalls: [] };
 	}
+	
+	const calls = new Set<string>();
+	const hooks = new Set<string>();
+	const apiCalls = new Set<string>();
+	const components = new Set<string>();
 
-	return exports;
+	node.getDescendantsOfKind(SyntaxKind.CallExpression).forEach((callExpr: any) => {
+		const expr = callExpr.getExpression();
+		
+		let callName = "";
+		if (expr.isKind(SyntaxKind.Identifier) || expr.isKind(SyntaxKind.PropertyAccessExpression)) {
+			callName = expr.getText();
+		}
+
+		if (callName) {
+			const baseName = callName.split(".")[0];
+			if (!IGNORE_CALLS.has(baseName) && !IGNORE_CALLS.has(callName)) {
+				if (callName.startsWith("use") && callName.length > 3 && callName[3] === callName[3].toUpperCase()) {
+					hooks.add(callName);
+				} else {
+					calls.add(callName);
+				}
+			}
+
+			if (callName === "fetch" || callName.startsWith("axios.")) {
+				const args = callExpr.getArguments();
+				if (args.length > 0) {
+					const firstArg = args[0];
+					if (firstArg.isKind(SyntaxKind.StringLiteral) || firstArg.isKind(SyntaxKind.NoSubstitutionTemplateLiteral)) {
+						const url = firstArg.getLiteralText();
+						if (url.startsWith("/api") || url.startsWith("http")) {
+							apiCalls.add(url);
+						}
+					}
+				}
+			}
+		}
+	});
+
+	node.getDescendantsOfKind(SyntaxKind.JsxSelfClosingElement).forEach((jsx: any) => {
+		const tagName = jsx.getTagNameNode().getText();
+		if (tagName && tagName[0] === tagName[0].toUpperCase()) components.add(tagName);
+	});
+	node.getDescendantsOfKind(SyntaxKind.JsxOpeningElement).forEach((jsx: any) => {
+		const tagName = jsx.getTagNameNode().getText();
+		if (tagName && tagName[0] === tagName[0].toUpperCase()) components.add(tagName);
+	});
+
+	return {
+		functionCalls: Array.from(calls),
+		componentDependencies: Array.from(components),
+		hooksUsed: Array.from(hooks),
+		apiCalls: Array.from(apiCalls)
+	};
 }
 
 /**
@@ -209,6 +289,7 @@ function chunkClass(
 			sub.id = createChunkId(context, file.relativePath, chunks.length);
 			sub.imports = fileImports;
 			sub.exports = fileExports;
+			sub.symbolName = className;
 			chunks.push(sub);
 		}
 	} else {
@@ -241,6 +322,7 @@ function chunkClass(
 			content,
 			imports: fileImports,
 			exports: fileExports,
+			...extractASTMetadata(method),
 		}, chunks.length));
 	}
 }
@@ -252,11 +334,12 @@ function chunkAstFile(
 	file: RepositoryFile,
 	content: string
 ): RepositoryChunk[] {
-	const project = new Project({ useInMemoryFileSystem: true });
+	const project = getSharedProject();
+	const tempFileName = `temp_${Date.now()}${file.extension}`;
 	const sourceFile = project.createSourceFile(
-		`temp${file.extension}`,
+		tempFileName,
 		content,
-		{ scriptKind: getScriptKind(file.extension) }
+		{ scriptKind: getScriptKind(file.extension), overwrite: true }
 	);
 
 	const fileImports = extractImports(sourceFile);
@@ -307,6 +390,11 @@ function chunkAstFile(
 				sub.id = createChunkId(context, file.relativePath, chunks.length);
 				sub.imports = fileImports;
 				sub.exports = fileExports;
+				sub.symbolName = seed.parentName ? `${seed.parentName}.${seed.symbolName}` : seed.symbolName;
+				sub.functionCalls = seed.functionCalls ?? [];
+				sub.componentDependencies = seed.componentDependencies ?? [];
+				sub.hooksUsed = seed.hooksUsed ?? [];
+				sub.apiCalls = seed.apiCalls ?? [];
 				chunks.push(sub);
 			}
 			return;
@@ -331,7 +419,14 @@ function chunkAstFile(
 			const { startLine, endLine } = { startLine: node.getStartLineNumber(), endLine: node.getEndLineNumber() };
 			const nodeContent = contentLines.slice(startLine - 1, endLine).join("\n");
 			const kind: RepositoryChunkKind = isComponentName(name, isReactFile) ? "component" : "function";
-			flushNamed({ kind, symbolName: name, startLine, endLine, content: nodeContent });
+			flushNamed({ 
+				kind, 
+				symbolName: name, 
+				startLine, 
+				endLine, 
+				content: nodeContent,
+				...extractASTMetadata(node)
+			});
 			continue;
 		}
 
@@ -345,7 +440,16 @@ function chunkAstFile(
 				isComponentName(varInfo.name, isReactFile) || varInfo.isWrapped
 					? "component"
 					: "function";
-			flushNamed({ kind, symbolName: varInfo.name, startLine, endLine, content: nodeContent });
+			
+			// For variables, the actual function is inside the initializer (which we parse if we get varInfo)
+			flushNamed({ 
+				kind, 
+				symbolName: varInfo.name, 
+				startLine, 
+				endLine, 
+				content: nodeContent,
+				...extractASTMetadata(node)
+			});
 			continue;
 		}
 

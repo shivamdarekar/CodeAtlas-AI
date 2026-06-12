@@ -60,7 +60,11 @@ export interface RepositoryChunk {
 	content: string;
 	contentLength: number;
 	imports: string[];
-	exports: string[];
+	exports?: string[];
+	functionCalls?: string[];
+	componentDependencies?: string[];
+	hooksUsed?: string[];
+	apiCalls?: string[];
 	directory: string;
 }
 
@@ -74,4 +78,33 @@ export interface RepositoryIndexSummary {
 
 export interface IndexedRepository extends RepositoryMetadata {
 	indexing: RepositoryIndexSummary;
+}
+
+export interface ChatSource {
+	filePath: string;
+	symbolName: string;
+	score: number;
+}
+
+export type ChatMode = "chat" | "overview" | "flow" | "diagram";
+
+export interface ChatResponse {
+	answer: string;
+	sources: ChatSource[];
+}
+
+export interface RepositorySummary {
+	repoId: string;
+	repoName: string;
+	namespace: string;
+	pages: string[];
+	components: string[];
+	services: string[];
+	hooks: string[];
+	apiRoutes: string[];
+	stats: {
+		files: number;
+		components: number;
+		functions: number;
+	};
 }
