@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion, useInView } from "framer-motion";
 import { ChevronRight, Terminal, RefreshCw } from "lucide-react";
 
 const steps = [
@@ -36,7 +36,7 @@ const steps = [
 ];
 
 // Custom typewriter component for the terminal effect
-const Typewriter = ({ text, isActive }: { text: string; isActive: boolean }) => {
+const Typewriter = ({ text, isActive, isInView = true }: { text: string; isActive: boolean; isInView?: boolean }) => {
   const [displayedText, setDisplayedText] = useState("");
   const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -114,7 +114,8 @@ const Typewriter = ({ text, isActive }: { text: string; isActive: boolean }) => 
       
       // Play sound/vibrate only on non-whitespace characters to simulate realistic typing
       // and randomly skip some to prevent it from sounding like a machine gun
-      if (char.trim() !== "" && Math.random() > 0.3) {
+      // Only play if the component is currently in view
+      if (char.trim() !== "" && Math.random() > 0.3 && isInView) {
         playKeystroke();
       }
 
@@ -134,9 +135,12 @@ export function HowItWorks() {
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const reduce = useReducedMotion();
   const constraintsRef = useRef(null);
+  const sectionRef = useRef(null);
+  const isInView = useInView(sectionRef, { amount: 0.3 });
 
   useEffect(() => {
-    if (!isAutoPlaying || terminalState === "closed" || terminalState === "maximized") return;
+    // Only auto-play if the section is in view to prevent missing the story
+    if (!isAutoPlaying || terminalState === "closed" || terminalState === "maximized" || !isInView) return;
 
     const currentStepData = steps[activeStep];
     const typingTime = currentStepData.codeSnippet.length * 20;
@@ -165,7 +169,7 @@ export function HowItWorks() {
   };
 
   return (
-    <section id="workflow" className="relative py-32 bg-[#0C0A09] border-t border-[#8A5F41]/10">
+    <section id="workflow" ref={sectionRef} className="relative py-32 bg-[#0C0A09] border-t border-[#8A5F41]/10">
       <div className="mx-auto max-w-[1400px] px-6">
         <div className="text-center max-w-2xl mx-auto mb-20">
           <span
@@ -362,7 +366,7 @@ export function HowItWorks() {
                                if (index === activeStep) {
                                  return (
                                    <div key={step.id} className="mb-6">
-                                     <Typewriter text={step.codeSnippet} isActive={true} />
+                                     <Typewriter text={step.codeSnippet} isActive={true} isInView={isInView} />
                                    </div>
                                  );
                                }
