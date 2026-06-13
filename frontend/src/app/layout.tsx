@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { Outfit } from "next/font/google";
+import { Geist, Geist_Mono, Outfit, Instrument_Serif, Inter } from "next/font/google";
 
 import "./globals.css";
 
@@ -23,6 +22,17 @@ const outfit = Outfit({
   weight: ["400", "500", "600", "700"],
 });
 
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-instrument",
+  subsets: ["latin"],
+  weight: "400",
+});
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
   title: "CodeAtlas AI",
   description:
@@ -37,7 +47,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`dark ${geistSans.variable} ${geistMono.variable} ${outfit.variable}`}
+      className={`dark ${geistSans.variable} ${geistMono.variable} ${outfit.variable} ${instrumentSerif.variable} ${inter.variable}`}
     >
       <body className="antialiased">
         <TooltipProvider>
