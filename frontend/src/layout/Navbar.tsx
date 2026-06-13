@@ -10,7 +10,7 @@ export function Navbar() {
   return (
     <div className="absolute top-6 left-0 right-0 z-50 flex justify-center pointer-events-none">
       <motion.header
-        initial={{ y: -20, opacity: 0 }}
+        initial={false}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className="pointer-events-auto flex items-center justify-between gap-12 rounded-full border border-[#8A5F41]/20 bg-[#1C1917]/30 px-6 py-3 backdrop-blur-md shadow-2xl"
@@ -59,7 +59,7 @@ export function Navbar() {
             How it works
           </Link>
           <Link
-            href="https://github.com/surajyadav04/CodeAtlas-AI"
+            href="https://github.com/shivamdarekar/CodeAtlas-AI"
             target="_blank"
             rel="noreferrer"
             className="text-[12px] font-medium text-[#A77F60] transition-colors hover:text-[#F3E4C9]"
@@ -103,7 +103,7 @@ export function Navbar() {
               How it works
             </Link>
             <Link
-              href="https://github.com/surajyadav04/CodeAtlas-AI"
+              href="https://github.com/shivamdarekar/CodeAtlas-AI"
               target="_blank"
               rel="noreferrer"
               onClick={() => setIsMobileMenuOpen(false)}
