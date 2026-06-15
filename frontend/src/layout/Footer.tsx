@@ -58,7 +58,7 @@ export function Footer() {
                 External
               </span>
               <Link
-                href="https://github.com/surajyadav04/CodeAtlas-AI"
+                href="https://github.com/shivamdarekar/CodeAtlas-AI"
                 target="_blank"
                 rel="noreferrer"
                 className="text-sm text-[#A77F60] transition-colors hover:text-[#F3E4C9]"
