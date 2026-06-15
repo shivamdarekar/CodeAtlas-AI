@@ -143,14 +143,13 @@ export function HeroSection() {
     const yAxis = (window.innerHeight / 2 - e.pageY) / 50;
     dashboardRef.current.style.transform = `rotateY(${xAxis}deg) rotateX(${-yAxis}deg)`;
   };
-
   const handleMouseLeave = () => {
     if (!dashboardRef.current) return;
     dashboardRef.current.style.transform = `rotateY(0deg) rotateX(0deg)`;
   };
 
   return (
-    <div className="w-full bg-[#050505] min-h-screen relative pt-[98px] pb-[120px]">
+    <div className="w-full bg-[#050505] min-h-screen relative pt-[98px] pb-0">
       <Navbar />
 
       <section 
@@ -221,7 +220,7 @@ export function HeroSection() {
         {/* Headline */}
         <motion.h1
           variants={reduce ? undefined : item}
-          className="font-[family-name:var(--font-instrument)] text-[64px] text-white mb-8 leading-[1.1] tracking-[-0.02em] max-w-[800px] font-normal"
+          className="font-[family-name:var(--font-instrument)] text-[64px] text-white mb-[32px] leading-[1.05] tracking-[-0.02em] max-w-[800px] font-normal"
         >
           Understand any codebase <span className="italic opacity-80 text-[#e3e2de]">in seconds.</span>
         </motion.h1>
@@ -229,7 +228,7 @@ export function HeroSection() {
         {/* Description */}
         <motion.p
           variants={reduce ? undefined : item}
-          className="font-[family-name:var(--font-inter)] text-[18px] text-[#a1a1aa] max-w-[500px] mb-10 leading-[1.6]"
+          className="font-[family-name:var(--font-inter)] text-lg md:text-xl text-[#F3E4C9]/90 max-w-[65ch] mb-[40px] leading-relaxed"
         >
           Explore repositories, generate documentation, and chat with your code using context-aware AI. Built for high-performance engineering teams.
         </motion.p>
@@ -237,7 +236,7 @@ export function HeroSection() {
         {/* Layer 5: Actions */}
         <motion.div
           variants={reduce ? undefined : item}
-          className="relative z-[50] flex flex-col sm:flex-row gap-4 mb-[100px] items-center"
+          className="relative z-[50] flex flex-row gap-[16px] mb-[100px] items-center justify-center"
         >
           <Button
             size="lg"
@@ -261,19 +260,6 @@ export function HeroSection() {
           </Button>
         </motion.div>
       </motion.div>
-
-      {/* Social Proof */}
-      <motion.div variants={reduce ? undefined : item} className="opacity-70 mb-24 relative z-[40]">
-          <p className="font-sans text-xs uppercase text-[#c4c8be] mb-6 tracking-[0.2em] font-semibold">
-            Trusted by developers at:
-          </p>
-          <div className="flex flex-wrap justify-center gap-10 grayscale opacity-80">
-            <div className="flex items-center gap-2 text-[#e3e2de] hover:opacity-100 transition-opacity"><Terminal className="h-6 w-6"/><span className="font-bold text-xl">GitHub</span></div>
-            <div className="flex items-center gap-2 text-[#e3e2de] hover:opacity-100 transition-opacity"><div className="w-6 h-6 border-2 border-current rounded-full flex items-center justify-center"><div className="w-0 h-0 border-l-4 border-r-4 border-b-[6px] border-l-transparent border-r-transparent border-b-current" /></div><span className="font-bold text-xl">Vercel</span></div>
-            <div className="flex items-center gap-2 text-[#e3e2de] hover:opacity-100 transition-opacity"><Database className="h-6 w-6"/><span className="font-bold text-xl">Supabase</span></div>
-            <div className="flex items-center gap-2 text-[#e3e2de] hover:opacity-100 transition-opacity"><Code className="h-6 w-6"/><span className="font-bold text-xl">Railway</span></div>
-          </div>
-        </motion.div>
       </div>
 
       {/* Layer 6: Dashboard Preview */}
@@ -282,12 +268,12 @@ export function HeroSection() {
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, margin: "-100px" }}
-        className="relative z-[60] w-[80vw] max-w-[1150px] pb-[120px]"
+        className="relative z-[60] w-[80vw] max-w-[1200px] mb-[120px]"
         style={{ perspective: "2000px" }}
       >
         <div 
           ref={dashboardRef}
-          className="bg-[#121411]/80 backdrop-blur-[32px] border border-[rgba(255,255,255,0.08)] rounded-[16px] overflow-hidden shadow-[0_20px_60px_-20px_rgba(0,0,0,0.6)] flex h-[500px] transition-transform duration-700 ease-out"
+          className="bg-[#121411]/80 backdrop-blur-[32px] border border-[rgba(255,255,255,0.08)] rounded-[16px] overflow-hidden shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] flex h-[500px] transition-transform duration-700 ease-out"
         >
           {/* Sidebar */}
           <aside className="w-64 border-r border-white/5 bg-white/5 flex flex-col p-6 gap-4 hidden md:flex">
@@ -513,6 +499,30 @@ export function HeroSection() {
           )}
         </div>
       </motion.div>
+
+      {/* Trusted Companies Grid (Railway-style continuation) */}
+      <div className="relative z-20 w-full border-t border-[rgba(255,255,255,0.03)] pt-16 pb-20 px-6 mt-16 bg-transparent">
+        <p className="text-center font-[family-name:var(--font-inter)] text-xs uppercase tracking-[0.2em] text-[#A77F60] mb-12 font-medium">
+          Trusted by developers worldwide
+        </p>
+        <div className="max-w-[1200px] mx-auto w-full border-l border-t border-[rgba(255,255,255,0.03)]">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+            {[
+              "GitHub", "Vercel", "Supabase", "OpenAI", "Railway", "Replit",
+              "Stripe", "Linear", "Figma", "Notion", "Scale", "HuggingFace"
+            ].map((company, i) => (
+              <div 
+                key={i} 
+                className="flex items-center justify-center h-[120px] border-r border-b border-[rgba(255,255,255,0.03)] opacity-50 hover:opacity-80 transition-opacity duration-300 cursor-default"
+              >
+                <span className="font-[family-name:var(--font-inter)] text-[18px] font-semibold tracking-tight grayscale">
+                  {company}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </section>
   </div>
   );

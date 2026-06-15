@@ -1,273 +1,635 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
-import {
-  FolderSearch,
-  Code2,
-  Search,
-  Database,
-  Cpu,
-  Network,
-  ArrowUpRight
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  MessageSquare, ArrowRight, Brain, Code2, Network, Search, 
+  Terminal, FileCode, CheckCircle2, FileText, Layers, FolderTree, 
+  GitMerge, Activity, BarChart3, ShieldCheck, Database, Server
 } from "lucide-react";
+import Link from "next/link";
+import { useRef, useState, useEffect } from "react";
 
-const springTransition = {
-  type: "spring",
-  stiffness: 300,
-  damping: 24,
-};
+// The timeline node that sits on the global spine.
+const TimelineNode = ({ icon: Icon }: { icon: any }) => (
+  <motion.div 
+    initial={{ borderColor: 'rgba(255,255,255,0.1)', boxShadow: '0 4px 10px rgba(0,0,0,0.5)' }}
+    whileInView={{ borderColor: 'rgba(181,205,172,0.6)', boxShadow: '0 0 20px rgba(181,205,172,0.4)' }}
+    viewport={{ margin: "-40% 0px -40% 0px" }}
+    className="hidden lg:flex absolute top-1/2 -left-[60px] -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-[#121411] border items-center justify-center z-30 transition-colors duration-700"
+  >
+    <Icon className="h-[18px] w-[18px] text-[#b5cdac]" />
+  </motion.div>
+);
 
 export function FeatureCards() {
-  const reduce = useReducedMotion();
-
   return (
-    <section id="features" className="relative py-32 bg-[#0C0A09] overflow-hidden">
-      {/* Custom Styles for StitchMCP Generated UI */}
-      <style>{`
-        .glass-card {
-          background: rgba(28, 25, 23, 0.4);
-          backdrop-filter: blur(24px);
-          -webkit-backdrop-filter: blur(24px);
-          border: 1px solid rgba(138, 95, 65, 0.2);
-          box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
-        }
-        .glass-card:hover {
-          border: 1px solid rgba(204, 214, 127, 0.3);
-          box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1), 0 20px 40px rgba(0,0,0,0.5);
-        }
-        .double-bezel {
-          position: relative;
-        }
-        .double-bezel::after {
-          content: '';
-          position: absolute;
-          inset: -1px;
-          border-radius: inherit;
-          padding: 1px;
-          background: linear-gradient(135deg, rgba(243, 228, 201, 0.15), transparent, rgba(204, 214, 127, 0.1));
-          mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          mask-composite: exclude;
-          pointer-events: none;
-        }
-        @keyframes scan {
-          0% { transform: translateY(-100%); opacity: 0; }
-          50% { opacity: 1; }
-          100% { transform: translateY(100%); opacity: 0; }
-        }
-        .scanner-line {
-          animation: scan 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-          background: linear-gradient(to bottom, transparent, #8A5F41, transparent);
-          box-shadow: 0 0 20px #8A5F41;
-        }
-        .mesh-gradient {
-          background: radial-gradient(at 0% 0%, rgba(138, 95, 65, 0.4) 0%, transparent 50%),
-                      radial-gradient(at 100% 0%, rgba(204, 214, 127, 0.2) 0%, transparent 50%),
-                      radial-gradient(at 100% 100%, rgba(167, 127, 96, 0.3) 0%, transparent 50%),
-                      radial-gradient(at 0% 100%, rgba(12, 10, 9, 0.8) 0%, transparent 50%);
-        }
-        @keyframes pulse-node {
-          0%, 100% { transform: scale(1); opacity: 0.3; }
-          50% { transform: scale(1.1); opacity: 0.8; }
-        }
-        .node-pulse {
-          animation: pulse-node 4s ease-in-out infinite;
-        }
-      `}</style>
+    <section id="features" className="relative w-full max-w-[1536px] mx-auto flex flex-col items-end pb-32 pt-12 overflow-hidden lg:overflow-visible">
+      {/* GLOBAL TIMELINE SPINE */}
+      <div className="absolute left-[40px] lg:left-[120px] top-[100px] bottom-[200px] w-[2px] bg-gradient-to-b from-transparent via-white/10 to-transparent hidden lg:block z-20" />
 
-      <div className="relative mx-auto max-w-[1400px] px-6">
-        <div className="flex flex-col items-start gap-4 md:flex-row md:items-end md:justify-between mb-16">
-          <div>
-            <span
-              className="font-mono text-[11px] font-medium uppercase text-[#A77F60]"
-              style={{ letterSpacing: "var(--tracking-caps)" }}
-            >
-              System Capabilities
-            </span>
-            <h2
-              className="mt-4 font-[family-name:var(--font-display)] text-3xl font-medium tracking-tight text-[#F3E4C9] sm:text-4xl max-w-2xl"
-              style={{ lineHeight: "var(--leading-heading)" }}
-            >
-              Engineered for massive codebases
-            </h2>
-          </div>
-        </div>
-
-        {/* Pure CSS Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 auto-rows-[280px]">
-          
-          {/* Feature 1: Repository Scanning */}
-          <motion.div
-            initial={reduce ? false : { opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ delay: 0.05, ...springTransition }}
-            className="md:col-span-8 md:row-span-2 glass-card double-bezel rounded-[24px] overflow-hidden relative group transition-all duration-500"
-          >
-            <div className="absolute inset-0 bg-[#161412] opacity-40"></div>
-            <div className="absolute top-0 left-0 w-full h-1/2 scanner-line z-0 opacity-50"></div>
-            
-            <div className="absolute top-12 right-12 opacity-20 pointer-events-none z-0">
-              <div className="flex flex-col gap-4">
-                <div className="w-32 h-4 bg-[#A77F60] rounded-full"></div>
-                <div className="w-48 h-4 bg-[#CCD67F] rounded-full"></div>
-                <div className="w-24 h-4 bg-[#8A5F41] rounded-full"></div>
-                <div className="w-32 h-4 bg-[#F3E4C9] rounded-full mt-4"></div>
-                <div className="w-16 h-4 bg-[#8A5F41] rounded-full"></div>
-              </div>
-            </div>
-
-            <div className="relative z-10 p-8 flex flex-col justify-end h-full">
-              <div className="mb-auto flex items-start justify-between">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0C0A09]/80 border border-[#8A5F41]/30">
-                  <FolderSearch className="h-5 w-5 text-[#CCD67F]" />
-                </div>
-                <ArrowUpRight className="h-5 w-5 text-[#A77F60] opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-1 group-hover:-translate-y-1" />
-              </div>
-              <div>
-                <span className="font-mono text-[10px] uppercase text-[#CCD67F] tracking-widest mb-2 block">Scanning Module</span>
-                <h3 className="text-2xl font-medium text-[#F3E4C9] mb-3 font-[family-name:var(--font-display)]">Repository Scanning</h3>
-                <p className="text-sm leading-relaxed text-[#A77F60] max-w-md">Deep-clone and traverse any public GitHub repository. Map the entire structural topology without manual indexing. Works on mega-repos.</p>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Feature 2: AST Parsing */}
-          <motion.div
-            initial={reduce ? false : { opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ delay: 0.1, ...springTransition }}
-            className="md:col-span-4 glass-card double-bezel rounded-[24px] overflow-hidden relative group transition-all duration-500"
-          >
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
-              <div className="relative w-64 h-64 opacity-30">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full border border-[#CCD67F]/40 node-pulse"></div>
-                <div className="absolute top-1/4 left-1/4 w-12 h-12 rounded-lg bg-[#CCD67F]/10 border border-[#CCD67F]/40 rotate-12"></div>
-                <div className="absolute bottom-1/4 right-1/4 w-16 h-16 rounded-full bg-[#8A5F41]/10 border border-[#8A5F41]/30"></div>
-                <div className="absolute top-1/2 left-1/4 w-32 h-[1px] bg-[#CCD67F]/30 rotate-45"></div>
-              </div>
-            </div>
-            
-            <div className="relative z-10 p-8 flex flex-col justify-end h-full">
-              <div className="mb-auto">
-                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0C0A09]/80 border border-[#8A5F41]/20">
-                    <Code2 className="h-4 w-4 text-[#CCD67F]" />
-                 </div>
-              </div>
-              <div>
-                <h3 className="text-lg font-medium text-[#F3E4C9] mb-2 font-[family-name:var(--font-display)]">AST Parsing</h3>
-                <p className="text-sm leading-relaxed text-[#A77F60]">Extract semantic structures across multiple languages with precision.</p>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Feature 3: Vector Storage */}
-          <motion.div
-            initial={reduce ? false : { opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ delay: 0.15, ...springTransition }}
-            className="md:col-span-4 glass-card double-bezel rounded-[24px] overflow-hidden relative group transition-all duration-500"
-          >
-            <div className="absolute inset-0 mesh-gradient opacity-40 z-0 transition-opacity duration-700 group-hover:opacity-70"></div>
-            
-            <div className="relative z-10 p-8 flex flex-col justify-end h-full">
-              <div className="mb-auto">
-                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0C0A09]/80 border border-[#8A5F41]/20">
-                    <Database className="h-4 w-4 text-[#CCD67F]" />
-                 </div>
-              </div>
-              <div>
-                <h3 className="text-lg font-medium text-[#F3E4C9] mb-2 font-[family-name:var(--font-display)]">Vector Storage</h3>
-                <p className="text-sm leading-relaxed text-[#A77F60]">Ultra-low latency retrieval powered by Pinecone architecture.</p>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Feature 4: Groq Inference */}
-          <motion.div
-            initial={reduce ? false : { opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ delay: 0.2, ...springTransition }}
-            className="md:col-span-4 md:row-span-2 glass-card double-bezel rounded-[24px] overflow-hidden relative group transition-all duration-500 bg-gradient-to-br from-[#1C1917] to-[#121110]"
-          >
-             <div className="absolute top-0 right-0 w-full h-full pointer-events-none opacity-20 group-hover:opacity-40 transition-opacity duration-700">
-                <svg className="absolute inset-0 w-full h-full stroke-[#F3E4C9]/20 fill-none" strokeWidth="1">
-                  <path d="M0,50 L100,50 L150,100 L300,100 M100,150 L150,200 L300,200 M50,250 L100,250 L150,300 L300,300" strokeDasharray="4 4" />
-                  <circle cx="100" cy="50" r="3" fill="#CCD67F"/>
-                  <circle cx="150" cy="200" r="3" fill="#CCD67F"/>
-                  <circle cx="150" cy="300" r="3" fill="#CCD67F"/>
-                </svg>
-                <div className="absolute bottom-20 right-10 w-32 h-32 bg-[#8A5F41]/20 rounded-full blur-3xl"></div>
-            </div>
-
-            <div className="relative z-10 p-8 flex flex-col justify-end h-full">
-              <div className="mb-auto flex items-start justify-between">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0C0A09]/80 border border-[#8A5F41]/30">
-                  <Cpu className="h-5 w-5 text-[#CCD67F]" />
-                </div>
-              </div>
-              <div>
-                <span className="font-mono text-[10px] uppercase text-[#A77F60] tracking-widest mb-2 block">LPU Engine</span>
-                <h3 className="text-2xl font-medium text-[#F3E4C9] mb-3 font-[family-name:var(--font-display)]">Groq Inference</h3>
-                <p className="text-sm leading-relaxed text-[#A77F60]">Real-time query resolution via Groq's high-speed inference engine. Zero latency bottlenecks.</p>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Feature 5: Semantic Search */}
-          <motion.div
-            initial={reduce ? false : { opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ delay: 0.25, ...springTransition }}
-            className="md:col-span-4 glass-card double-bezel rounded-[24px] overflow-hidden relative group transition-all duration-500"
-          >
-             <div className="absolute inset-0 bg-gradient-to-t from-[#8A5F41]/10 to-transparent opacity-50"></div>
-            <div className="relative z-10 p-8 flex flex-col justify-end h-full">
-              <div className="mb-auto">
-                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0C0A09]/80 border border-[#8A5F41]/20">
-                    <Search className="h-4 w-4 text-[#CCD67F]" />
-                 </div>
-              </div>
-              <div>
-                <h3 className="text-lg font-medium text-[#F3E4C9] mb-2 font-[family-name:var(--font-display)]">Semantic Search</h3>
-                <p className="text-sm leading-relaxed text-[#A77F60]">Find logic by meaning, not by exact keyword match. Context aware.</p>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Feature 6: Architecture Tracing */}
-          <motion.div
-            initial={reduce ? false : { opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ delay: 0.3, ...springTransition }}
-            className="md:col-span-4 glass-card double-bezel rounded-[24px] overflow-hidden relative group transition-all duration-500"
-          >
-            <div className="absolute top-0 right-0 w-full h-full pointer-events-none opacity-20">
-               <svg className="absolute inset-0 w-full h-full stroke-[#A77F60] fill-none" strokeWidth="1">
-                  <path d="M-50,50 Q100,150 50,300" opacity="0.3"></path>
-                  <path d="M0,100 Q150,200 100,350" opacity="0.5"></path>
-                  <circle cx="100" cy="240" r="4" fill="#8A5F41"/>
-               </svg>
-            </div>
-            <div className="relative z-10 p-8 flex flex-col justify-end h-full">
-               <div className="mb-auto">
-                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0C0A09]/80 border border-[#8A5F41]/20">
-                    <Network className="h-4 w-4 text-[#CCD67F]" />
-                 </div>
-              </div>
-              <div>
-                <h3 className="text-lg font-medium text-[#F3E4C9] mb-2 font-[family-name:var(--font-display)]">Architecture Tracing</h3>
-                <p className="text-sm leading-relaxed text-[#A77F60]">Trace data flows across the full stack. Identify architectural bottlenecks.</p>
-              </div>
-            </div>
-          </motion.div>
-
-        </div>
+      {/* Cards Container */}
+      <div className="w-full lg:w-[calc(100%-180px)] flex flex-col gap-12 pr-4 pl-4 lg:pr-8 lg:pl-0 z-30 relative">
+        <StorySectionOne />
+        <StorySectionTwo />
+        <StorySectionThree />
+        <StorySectionFour />
+        
+        <div className="h-8 w-full" />
+        <CTASection />
       </div>
     </section>
+  );
+}
+
+// ------------------------------------------------------------------------------------------------
+// SECTION 1: AI Chat (Text Left | Screenshot Right)
+// ------------------------------------------------------------------------------------------------
+function StorySectionOne() {
+  const mockupRef = useRef<HTMLDivElement>(null);
+  const [storyStep, setStoryStep] = useState(0);
+
+  useEffect(() => {
+    let t1: NodeJS.Timeout, t2: NodeJS.Timeout, t3: NodeJS.Timeout, t4: NodeJS.Timeout, t5: NodeJS.Timeout, t6: NodeJS.Timeout;
+    const runSequence = () => {
+      setStoryStep(0);
+      t1 = setTimeout(() => {
+        setStoryStep(1); t2 = setTimeout(() => {
+          setStoryStep(2); t3 = setTimeout(() => {
+            setStoryStep(3); t4 = setTimeout(() => {
+              setStoryStep(4); t5 = setTimeout(() => {
+                setStoryStep(5); t6 = setTimeout(() => runSequence(), 4000);
+              }, 800);
+            }, 800);
+          }, 600);
+        }, 1200);
+      }, 1000);
+    };
+    runSequence();
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5); clearTimeout(t6); };
+  }, []);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (window.innerWidth < 1024 || !mockupRef.current) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left - rect.width / 2;
+    const y = e.clientY - rect.top - rect.height / 2;
+    mockupRef.current.style.transform = `rotateY(${x / 40}deg) rotateX(${-y / 40}deg)`;
+  };
+  const handleMouseLeave = () => {
+    if (!mockupRef.current) return;
+    mockupRef.current.style.transform = `rotateY(0deg) rotateX(0deg)`;
+  };
+
+  return (
+    <div className="relative w-full bg-[#0a0a0a] rounded-[24px] border border-[rgba(255,255,255,0.06)] overflow-visible flex flex-col shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+      
+      {/* Node Attached to Global Spine */}
+      <TimelineNode icon={Brain} />
+
+      <div className="absolute inset-0 z-0 pointer-events-none rounded-[24px] overflow-hidden">
+        <div className="absolute top-[-10%] right-[-5%] w-[50%] h-[50%] rounded-full bg-[#98b090]/[0.03] blur-[100px]" />
+        <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} />
+      </div>
+
+      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 p-8 lg:p-20 min-h-[600px] items-center">
+        
+        {/* Left: Content (40%) */}
+        <div className="lg:col-span-5 flex flex-col justify-center">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: "easeOut" }}>
+            <div className="inline-flex items-center gap-2 h-[40px] px-4 rounded-full bg-[#121411] border border-[rgba(255,255,255,0.08)] shadow-sm mb-8">
+              <MessageSquare className="h-4 w-4 text-[#b5cdac]" />
+              <span className="font-[family-name:var(--font-inter)] text-[13px] font-medium text-white/80 tracking-wide">AI Chat</span>
+            </div>
+            <h2 className="font-[family-name:var(--font-instrument)] text-[48px] lg:text-[56px] text-white leading-[1.05] max-w-[550px] mb-6 font-normal tracking-[-0.01em]">
+              Talk to your repositories naturally.
+            </h2>
+            <p className="font-[family-name:var(--font-inter)] text-[17px] text-[#a1a1aa] leading-[1.6] max-w-[500px] mb-10">
+              Ask questions, understand relationships, and explore codebases instantly with context-aware answers.
+            </p>
+            <Link href="#" className="group inline-flex items-center gap-2 font-[family-name:var(--font-inter)] text-[15px] font-medium text-[#e3e2de] opacity-60 hover:opacity-100 transition-opacity duration-300">
+              Learn more <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </motion.div>
+        </div>
+
+        {/* Right: Screenshot (60%) */}
+        <div className="lg:col-span-7 flex items-center justify-center relative" style={{ perspective: "2000px" }} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+          <motion.div ref={mockupRef} initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }} className="w-full bg-[#121411] rounded-[16px] border border-[rgba(255,255,255,0.06)] shadow-[0_15px_50px_-10px_rgba(0,0,0,0.5)] overflow-hidden flex flex-row transition-transform duration-700 ease-out h-[650px]">
+            {/* Sidebar Mock */}
+            <aside className="w-64 border-r border-[rgba(255,255,255,0.04)] bg-[#0a0a0a]/50 flex flex-col hidden md:flex shrink-0">
+              <div className="p-5 border-b border-[rgba(255,255,255,0.04)]">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-7 h-7 rounded bg-[#98b090]/10 border border-[#98b090]/20 flex items-center justify-center">
+                    <MessageSquare className="h-3.5 w-3.5 text-[#b5cdac]" />
+                  </div>
+                  <span className="font-[family-name:var(--font-inter)] font-semibold text-[14px] text-[#e3e2de]">Atlas Workspace</span>
+                </div>
+                <div className="w-full h-8 rounded-lg bg-white/[0.02] border border-[rgba(255,255,255,0.04)] flex items-center px-3 gap-2">
+                   <Search className="h-3 w-3 text-white/30" />
+                   <div className="h-1.5 w-16 bg-white/10 rounded-full" />
+                </div>
+              </div>
+              <div className="flex-1 p-5 flex flex-col gap-4">
+                <div className="flex items-center gap-2">
+                   <Terminal className="h-3.5 w-3.5 text-white/40" />
+                   <span className="font-[family-name:var(--font-inter)] text-[12px] font-medium text-white/60">Active Context</span>
+                </div>
+                <div className="flex flex-col gap-3 pl-5 mt-1">
+                  <div className="flex items-center gap-2">
+                     <FileCode className="h-3.5 w-3.5 text-[#98b090]/70" />
+                     <span className="font-[family-name:var(--font-mono)] text-[11px] text-white/50 truncate">checkout_service.go</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                     <FileCode className="h-3.5 w-3.5 text-[#b5cdac]/50" />
+                     <span className="font-[family-name:var(--font-mono)] text-[11px] text-white/50 truncate">stripe_webhook.go</span>
+                  </div>
+                </div>
+              </div>
+            </aside>
+            <div className="flex-1 flex flex-col bg-[#0a0a0a]/30">
+              <div className="h-12 border-b border-[rgba(255,255,255,0.04)] flex items-center px-4 gap-2 bg-white/[0.01]">
+                <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
+                <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
+                <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
+              </div>
+              <div className="p-6 lg:p-8 flex flex-col gap-8 flex-1 overflow-hidden relative">
+                <AnimatePresence>
+                  {storyStep >= 1 && (
+                    <motion.div key="msg-user" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.3 }} className="flex gap-4 self-end max-w-[80%]">
+                      <div className="bg-[#1a1c18] border border-[rgba(255,255,255,0.05)] rounded-2xl rounded-tr-sm px-5 py-4 shadow-sm">
+                        <p className="font-[family-name:var(--font-inter)] text-[14px] text-[#e3e2de]">How does the payment flow work?</p>
+                      </div>
+                    </motion.div>
+                  )}
+                  {storyStep >= 2 && (
+                    <motion.div key="msg-ai" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.3 }} className="flex gap-4 max-w-[95%]">
+                      <div className="w-8 h-8 rounded-full bg-[#98b090]/10 border border-[#98b090]/20 flex items-center justify-center flex-shrink-0 mt-1">
+                        <Brain className="h-4 w-4 text-[#b5cdac]" />
+                      </div>
+                      <div className="flex flex-col gap-4">
+                        <div className="flex items-center gap-2">
+                          <span className="font-[family-name:var(--font-inter)] text-[13px] font-semibold text-[#e3e2de]">Atlas Assistant</span>
+                          <span className="font-[family-name:var(--font-inter)] text-[12px] text-white/30">Just now</span>
+                        </div>
+                        {storyStep === 2 && (
+                           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex gap-1 items-center h-4">
+                              <span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-pulse" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-pulse" style={{ animationDelay: "150ms" }} />
+                              <span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-pulse" style={{ animationDelay: "300ms" }} />
+                           </motion.div>
+                        )}
+                        {storyStep >= 3 && (
+                          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-[family-name:var(--font-inter)] text-[14px] text-[#a1a1aa] leading-[1.6]">
+                            The payment lifecycle involves three main services interacting over gRPC. Here's the complete architecture breakdown:
+                          </motion.p>
+                        )}
+                        {storyStep >= 4 && (
+                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#0c0c0c] overflow-hidden shadow-sm origin-top">
+                            <div className="px-4 py-2.5 border-b border-[rgba(255,255,255,0.04)] bg-white/[0.01] flex items-center gap-2">
+                              <Network className="h-3.5 w-3.5 text-white/30" />
+                              <span className="font-[family-name:var(--font-mono)] text-[12px] text-white/50">payment-lifecycle.mermaid</span>
+                            </div>
+                            <div className="p-5 font-[family-name:var(--font-mono)] text-[13px] text-[#98b090] leading-[1.8] opacity-80 overflow-x-auto whitespace-nowrap">
+                              Client -{">"} API Gateway: Initiate Checkout<br/>
+                              API Gateway -{">"} Checkout Service: Process Request<br/>
+                              Checkout Service -{">"} Stripe API: Create Intent<br/>
+                              Stripe API --{">"} Checkout Service: Client Secret<br/>
+                              Checkout Service --{">"} Client: Return Token
+                            </div>
+                          </motion.div>
+                        )}
+                        {storyStep >= 5 && (
+                          <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="flex flex-wrap items-center gap-2 mt-4">
+                            <div className="px-3 py-1.5 rounded-lg bg-white/[0.02] border border-[rgba(255,255,255,0.04)] flex items-center gap-2 hover:bg-white/[0.04] transition-colors cursor-pointer">
+                               <Code2 className="h-3.5 w-3.5 text-white/40" />
+                               <span className="font-[family-name:var(--font-inter)] text-[12px] text-white/60">checkout_service.go</span>
+                            </div>
+                            <div className="px-3 py-1.5 rounded-lg bg-white/[0.02] border border-[rgba(255,255,255,0.04)] flex items-center gap-2 hover:bg-white/[0.04] transition-colors cursor-pointer">
+                               <Code2 className="h-3.5 w-3.5 text-white/40" />
+                               <span className="font-[family-name:var(--font-inter)] text-[12px] text-white/60">stripe_webhook.go</span>
+                            </div>
+                            <div className="h-4 w-[1px] bg-white/10 mx-2" />
+                            <div className="px-3 py-1.5 rounded-lg bg-[#b5cdac]/10 border border-[#b5cdac]/20 flex items-center gap-2 hover:bg-[#b5cdac]/20 transition-colors cursor-pointer shadow-sm">
+                               <CheckCircle2 className="h-3.5 w-3.5 text-[#b5cdac]" />
+                               <span className="font-[family-name:var(--font-inter)] font-medium text-[12px] text-[#b5cdac]">Apply Architecture</span>
+                            </div>
+                          </motion.div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              <div className="p-4 border-t border-[rgba(255,255,255,0.04)] bg-[#0a0a0a]/80 backdrop-blur-sm mt-auto z-10">
+                 <div className="w-full bg-[#1a1c18] border border-[rgba(255,255,255,0.06)] rounded-xl h-12 flex items-center px-4 shadow-inner">
+                    <div className="h-4 w-[2px] bg-[#98b090] animate-pulse rounded-full" />
+                    <span className="text-[13px] text-white/30 ml-2 font-[family-name:var(--font-inter)]">Ask Atlas anything...</span>
+                 </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ------------------------------------------------------------------------------------------------
+// SECTION 2: Documentation (Text Left | Screenshot Right)
+// ------------------------------------------------------------------------------------------------
+function StorySectionTwo() {
+  const mockupRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (window.innerWidth < 1024 || !mockupRef.current) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left - rect.width / 2;
+    const y = e.clientY - rect.top - rect.height / 2;
+    mockupRef.current.style.transform = `rotateY(${x / 40}deg) rotateX(${-y / 40}deg)`;
+  };
+  const handleMouseLeave = () => {
+    if (!mockupRef.current) return;
+    mockupRef.current.style.transform = `rotateY(0deg) rotateX(0deg)`;
+  };
+
+  return (
+    <div className="relative w-full bg-[#0a0a0a] rounded-[24px] border border-[rgba(255,255,255,0.06)] overflow-visible flex flex-col shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+      
+      {/* Node Attached to Global Spine */}
+      <TimelineNode icon={FileText} />
+
+      <div className="absolute inset-0 z-0 pointer-events-none rounded-[24px] overflow-hidden">
+        <div className="absolute top-[20%] left-[-5%] w-[40%] h-[40%] rounded-full bg-[#98b090]/[0.02] blur-[120px]" />
+      </div>
+
+      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 p-8 lg:p-20 min-h-[600px] items-center">
+        
+        {/* Left: Content (40%) */}
+        <div className="lg:col-span-5 flex flex-col justify-center">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: "easeOut" }}>
+            <div className="inline-flex items-center gap-2 h-[40px] px-4 rounded-full bg-[#121411] border border-[rgba(255,255,255,0.08)] shadow-sm mb-8">
+              <FileText className="h-4 w-4 text-[#b5cdac]" />
+              <span className="font-[family-name:var(--font-inter)] text-[13px] font-medium text-white/80 tracking-wide">Documentation</span>
+            </div>
+            <h2 className="font-[family-name:var(--font-instrument)] text-[48px] lg:text-[56px] text-white leading-[1.05] max-w-[550px] mb-6 font-normal tracking-[-0.01em]">
+              Generate technical documentation automatically.
+            </h2>
+            <p className="font-[family-name:var(--font-inter)] text-[17px] text-[#a1a1aa] leading-[1.6] max-w-[500px] mb-10">
+              Create architecture summaries, API references, and markdown documentation in seconds.
+            </p>
+            <Link href="#" className="group inline-flex items-center gap-2 font-[family-name:var(--font-inter)] text-[15px] font-medium text-[#e3e2de] opacity-60 hover:opacity-100 transition-opacity duration-300">
+              Learn more <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </motion.div>
+        </div>
+
+        {/* Right: Screenshot (60%) */}
+        <div className="lg:col-span-7 flex items-center justify-center relative" style={{ perspective: "2000px" }} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+          <motion.div ref={mockupRef} initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }} className="w-full bg-[#121411] rounded-[16px] border border-[rgba(255,255,255,0.06)] shadow-[0_15px_50px_-10px_rgba(0,0,0,0.5)] overflow-hidden flex flex-row transition-transform duration-700 ease-out h-[600px]">
+             
+            {/* Main Editor Area */}
+            <div className="flex-1 flex flex-col bg-[#0a0a0a]/30">
+              <div className="h-12 border-b border-[rgba(255,255,255,0.04)] flex items-center px-4 gap-4 bg-white/[0.01]">
+                <div className="flex gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1 bg-white/[0.03] rounded-md border border-[rgba(255,255,255,0.05)]">
+                   <FileText className="h-3 w-3 text-white/40" />
+                   <span className="font-[family-name:var(--font-inter)] text-[12px] text-white/50">architecture.md</span>
+                </div>
+              </div>
+              
+              <div className="p-8 lg:p-12 flex flex-col gap-6 flex-1 overflow-hidden relative">
+                 <div className="w-[80%] h-8 bg-white/5 rounded-md" />
+                 <div className="w-full h-4 bg-white/[0.02] rounded-sm mt-4" />
+                 <div className="w-[90%] h-4 bg-white/[0.02] rounded-sm" />
+                 <div className="w-[85%] h-4 bg-white/[0.02] rounded-sm" />
+                 
+                 <div className="mt-8 rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#0c0c0c] p-6 shadow-inner">
+                    <div className="flex items-center gap-4 mb-6">
+                       <div className="w-12 h-12 rounded-lg bg-[#98b090]/10 border border-[#98b090]/20 flex items-center justify-center">
+                          <Server className="h-5 w-5 text-[#b5cdac]" />
+                       </div>
+                       <div className="flex flex-col gap-2 flex-1">
+                         <div className="w-[40%] h-3 bg-white/10 rounded-sm" />
+                         <div className="w-[60%] h-2 bg-white/5 rounded-sm" />
+                       </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                       <div className="h-20 rounded-md border border-[rgba(255,255,255,0.04)] bg-white/[0.02]" />
+                       <div className="h-20 rounded-md border border-[rgba(255,255,255,0.04)] bg-white/[0.02]" />
+                    </div>
+                 </div>
+
+                 <div className="w-[70%] h-4 bg-white/[0.02] rounded-sm mt-8" />
+                 <div className="w-[60%] h-4 bg-white/[0.02] rounded-sm" />
+              </div>
+            </div>
+
+            {/* Right Context Panel */}
+            <aside className="w-64 border-l border-[rgba(255,255,255,0.04)] bg-[#0a0a0a]/50 flex flex-col hidden md:flex shrink-0">
+               <div className="p-5 border-b border-[rgba(255,255,255,0.04)] flex items-center gap-2">
+                 <Layers className="h-3.5 w-3.5 text-white/40" />
+                 <span className="font-[family-name:var(--font-inter)] text-[12px] font-medium text-white/60">Doc Outline</span>
+               </div>
+               <div className="flex flex-col p-5 gap-4">
+                 <div className="flex items-center gap-2">
+                    <div className="w-1 h-1 rounded-full bg-[#b5cdac]" />
+                    <div className="w-[60%] h-2 bg-white/10 rounded-sm" />
+                 </div>
+                 <div className="flex items-center gap-2 pl-4">
+                    <div className="w-1 h-1 rounded-full bg-white/20" />
+                    <div className="w-[70%] h-2 bg-white/5 rounded-sm" />
+                 </div>
+                 <div className="flex items-center gap-2 pl-4">
+                    <div className="w-1 h-1 rounded-full bg-white/20" />
+                    <div className="w-[50%] h-2 bg-white/5 rounded-sm" />
+                 </div>
+                 <div className="flex items-center gap-2 mt-4">
+                    <div className="w-1 h-1 rounded-full bg-[#b5cdac]" />
+                    <div className="w-[80%] h-2 bg-white/10 rounded-sm" />
+                 </div>
+               </div>
+            </aside>
+          </motion.div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+// ------------------------------------------------------------------------------------------------
+// SECTION 3: Repository Explorer (Text Left | Screenshot Right)
+// ------------------------------------------------------------------------------------------------
+function StorySectionThree() {
+  const mockupRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (window.innerWidth < 1024 || !mockupRef.current) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left - rect.width / 2;
+    const y = e.clientY - rect.top - rect.height / 2;
+    mockupRef.current.style.transform = `rotateY(${x / 40}deg) rotateX(${-y / 40}deg)`;
+  };
+  const handleMouseLeave = () => {
+    if (!mockupRef.current) return;
+    mockupRef.current.style.transform = `rotateY(0deg) rotateX(0deg)`;
+  };
+
+  return (
+    <div className="relative w-full bg-[#0a0a0a] rounded-[24px] border border-[rgba(255,255,255,0.06)] overflow-visible flex flex-col shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+      
+      {/* Node Attached to Global Spine */}
+      <TimelineNode icon={FolderTree} />
+
+      <div className="absolute inset-0 z-0 pointer-events-none rounded-[24px] overflow-hidden">
+        <div className="absolute bottom-[-10%] right-[10%] w-[40%] h-[40%] rounded-full bg-[#98b090]/[0.02] blur-[120px]" />
+      </div>
+
+      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 p-8 lg:p-20 min-h-[600px] items-center">
+        
+        {/* Left: Content (40%) */}
+        <div className="lg:col-span-5 flex flex-col justify-center">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: "easeOut" }}>
+            <div className="inline-flex items-center gap-2 h-[40px] px-4 rounded-full bg-[#121411] border border-[rgba(255,255,255,0.08)] shadow-sm mb-8">
+              <FolderTree className="h-4 w-4 text-[#b5cdac]" />
+              <span className="font-[family-name:var(--font-inter)] text-[13px] font-medium text-white/80 tracking-wide">Repository Explorer</span>
+            </div>
+            <h2 className="font-[family-name:var(--font-instrument)] text-[48px] lg:text-[56px] text-white leading-[1.05] max-w-[550px] mb-6 font-normal tracking-[-0.01em]">
+              Navigate complex codebases effortlessly.
+            </h2>
+            <p className="font-[family-name:var(--font-inter)] text-[17px] text-[#a1a1aa] leading-[1.6] max-w-[500px] mb-10">
+              Understand project structure and discover relationships through an intelligent explorer.
+            </p>
+            <Link href="#" className="group inline-flex items-center gap-2 font-[family-name:var(--font-inter)] text-[15px] font-medium text-[#e3e2de] opacity-60 hover:opacity-100 transition-opacity duration-300">
+              Learn more <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </motion.div>
+        </div>
+
+        {/* Right: Screenshot (60%) */}
+        <div className="lg:col-span-7 flex items-center justify-center relative" style={{ perspective: "2000px" }} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+          <motion.div ref={mockupRef} initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }} className="w-full bg-[#121411] rounded-[16px] border border-[rgba(255,255,255,0.06)] shadow-[0_15px_50px_-10px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col transition-transform duration-700 ease-out h-[600px]">
+            {/* Header */}
+            <div className="h-12 border-b border-[rgba(255,255,255,0.04)] flex items-center px-4 gap-4 bg-white/[0.01]">
+              <div className="flex gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
+                <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
+                <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
+              </div>
+            </div>
+            
+            <div className="flex-1 flex flex-row bg-[#0a0a0a]/30">
+               {/* Repo Tree Panel */}
+               <aside className="w-64 border-r border-[rgba(255,255,255,0.04)] bg-transparent flex flex-col hidden md:flex shrink-0 p-5">
+                 <div className="flex items-center gap-2 mb-6">
+                    <Database className="h-4 w-4 text-[#98b090]" />
+                    <span className="font-[family-name:var(--font-inter)] text-[13px] font-semibold text-white/80">CodeAtlas-AI</span>
+                 </div>
+                 {/* Tree structure */}
+                 <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-2">
+                       <FolderTree className="h-3 w-3 text-white/30" />
+                       <span className="font-[family-name:var(--font-mono)] text-[12px] text-white/50">backend/</span>
+                    </div>
+                    <div className="flex items-center gap-2 pl-4">
+                       <FileCode className="h-3 w-3 text-[#b5cdac]/70" />
+                       <span className="font-[family-name:var(--font-mono)] text-[12px] text-white/70">main.py</span>
+                    </div>
+                    <div className="flex items-center gap-2 pl-4">
+                       <FileCode className="h-3 w-3 text-white/30" />
+                       <span className="font-[family-name:var(--font-mono)] text-[12px] text-white/40">models.py</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                       <FolderTree className="h-3 w-3 text-white/30" />
+                       <span className="font-[family-name:var(--font-mono)] text-[12px] text-white/50">frontend/</span>
+                    </div>
+                    <div className="flex items-center gap-2 pl-4">
+                       <FolderTree className="h-3 w-3 text-white/30" />
+                       <span className="font-[family-name:var(--font-mono)] text-[12px] text-white/40">src/</span>
+                    </div>
+                 </div>
+               </aside>
+               
+               {/* Main Canvas - Dependency Graph Mock */}
+               <div className="flex-1 relative flex items-center justify-center p-8 overflow-hidden">
+                  <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+                  
+                  {/* Graph Nodes Mock */}
+                  <div className="relative w-full h-full max-w-[400px] max-h-[400px]">
+                     {/* Center Node */}
+                     <div className="absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-16 h-16 rounded-xl bg-[#121411] border border-[#b5cdac]/40 shadow-[0_0_20px_rgba(181,205,172,0.2)] flex items-center justify-center z-20">
+                        <Database className="h-6 w-6 text-[#b5cdac]" />
+                     </div>
+
+                     {/* Satellite Nodes */}
+                     <div className="absolute top-[10%] left-[20%] w-12 h-12 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center z-20">
+                        <Server className="h-4 w-4 text-white/40" />
+                     </div>
+                     <div className="absolute top-[80%] left-[15%] w-12 h-12 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center z-20">
+                        <Terminal className="h-4 w-4 text-white/40" />
+                     </div>
+                     <div className="absolute top-[30%] right-[10%] w-12 h-12 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center z-20">
+                        <Code2 className="h-4 w-4 text-white/40" />
+                     </div>
+
+                     {/* SVG Lines */}
+                     <svg className="absolute inset-0 w-full h-full pointer-events-none z-10" style={{ overflow: 'visible' }}>
+                        <path d="M 50 50 Q 150 150 200 200" stroke="rgba(255,255,255,0.1)" strokeWidth="2" fill="none" strokeDasharray="4 4" />
+                        <path d="M 200 200 Q 250 300 100 350" stroke="rgba(255,255,255,0.1)" strokeWidth="2" fill="none" />
+                        <path d="M 200 200 Q 300 150 350 150" stroke="rgba(255,255,255,0.1)" strokeWidth="2" fill="none" />
+                     </svg>
+                  </div>
+               </div>
+            </div>
+          </motion.div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+// ------------------------------------------------------------------------------------------------
+// SECTION 4: Insights (Text Left | Screenshot Right)
+// ------------------------------------------------------------------------------------------------
+function StorySectionFour() {
+  const mockupRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (window.innerWidth < 1024 || !mockupRef.current) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left - rect.width / 2;
+    const y = e.clientY - rect.top - rect.height / 2;
+    mockupRef.current.style.transform = `rotateY(${x / 40}deg) rotateX(${-y / 40}deg)`;
+  };
+  const handleMouseLeave = () => {
+    if (!mockupRef.current) return;
+    mockupRef.current.style.transform = `rotateY(0deg) rotateX(0deg)`;
+  };
+
+  return (
+    <div className="relative w-full bg-[#0a0a0a] rounded-[24px] border border-[rgba(255,255,255,0.06)] overflow-visible flex flex-col shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+      
+      {/* Node Attached to Global Spine */}
+      <TimelineNode icon={Activity} />
+
+      <div className="absolute inset-0 z-0 pointer-events-none rounded-[24px] overflow-hidden">
+        <div className="absolute top-[30%] left-[20%] w-[30%] h-[30%] rounded-full bg-[#98b090]/[0.02] blur-[120px]" />
+      </div>
+
+      <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 p-8 lg:p-20 min-h-[600px] items-center">
+        
+        {/* Left: Content (40%) */}
+        <div className="lg:col-span-5 flex flex-col justify-center">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.7, ease: "easeOut" }}>
+            <div className="inline-flex items-center gap-2 h-[40px] px-4 rounded-full bg-[#121411] border border-[rgba(255,255,255,0.08)] shadow-sm mb-8">
+              <Activity className="h-4 w-4 text-[#b5cdac]" />
+              <span className="font-[family-name:var(--font-inter)] text-[13px] font-medium text-white/80 tracking-wide">Insights</span>
+            </div>
+            <h2 className="font-[family-name:var(--font-instrument)] text-[48px] lg:text-[56px] text-white leading-[1.05] max-w-[550px] mb-6 font-normal tracking-[-0.01em]">
+              Understand dependencies and architecture.
+            </h2>
+            <p className="font-[family-name:var(--font-inter)] text-[17px] text-[#a1a1aa] leading-[1.6] max-w-[500px] mb-10">
+              Analyze complexity, dependencies, and project health to make better decisions.
+            </p>
+            <Link href="#" className="group inline-flex items-center gap-2 font-[family-name:var(--font-inter)] text-[15px] font-medium text-[#e3e2de] opacity-60 hover:opacity-100 transition-opacity duration-300">
+              Learn more <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </motion.div>
+        </div>
+
+        {/* Right: Screenshot (60%) */}
+        <div className="lg:col-span-7 flex items-center justify-center relative" style={{ perspective: "2000px" }} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+          <motion.div ref={mockupRef} initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }} className="w-full bg-[#121411] rounded-[16px] border border-[rgba(255,255,255,0.06)] shadow-[0_15px_50px_-10px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col transition-transform duration-700 ease-out h-[600px]">
+             
+            <div className="h-12 border-b border-[rgba(255,255,255,0.04)] flex items-center px-4 gap-4 bg-white/[0.01]">
+              <div className="flex gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
+                <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
+                <div className="w-2.5 h-2.5 rounded-full bg-white/10" />
+              </div>
+            </div>
+
+            <div className="flex-1 flex flex-col p-8 bg-[#0a0a0a]/30 gap-6">
+               <div className="flex items-center gap-4">
+                  <div className="flex-1 h-24 rounded-xl border border-[rgba(255,255,255,0.04)] bg-white/[0.02] p-5 flex flex-col justify-between">
+                     <span className="text-[11px] font-[family-name:var(--font-inter)] text-white/40 uppercase tracking-widest">Health Score</span>
+                     <span className="text-3xl font-[family-name:var(--font-instrument)] text-[#b5cdac]">98%</span>
+                  </div>
+                  <div className="flex-1 h-24 rounded-xl border border-[rgba(255,255,255,0.04)] bg-white/[0.02] p-5 flex flex-col justify-between">
+                     <span className="text-[11px] font-[family-name:var(--font-inter)] text-white/40 uppercase tracking-widest">Dependencies</span>
+                     <span className="text-3xl font-[family-name:var(--font-instrument)] text-white">142</span>
+                  </div>
+                  <div className="flex-1 h-24 rounded-xl border border-[rgba(255,255,255,0.04)] bg-white/[0.02] p-5 flex flex-col justify-between">
+                     <span className="text-[11px] font-[family-name:var(--font-inter)] text-white/40 uppercase tracking-widest">Complexity</span>
+                     <span className="text-3xl font-[family-name:var(--font-instrument)] text-[#e3e2de]">A+</span>
+                  </div>
+               </div>
+
+               <div className="flex-1 rounded-xl border border-[rgba(255,255,255,0.04)] bg-[#0c0c0c] p-6 relative overflow-hidden flex flex-col">
+                  <div className="flex items-center justify-between mb-8">
+                     <span className="font-[family-name:var(--font-inter)] text-[13px] font-medium text-white/60">Complexity Trends</span>
+                     <BarChart3 className="h-4 w-4 text-white/20" />
+                  </div>
+                  {/* Mock Chart Area */}
+                  <div className="flex-1 flex items-end justify-between gap-2 px-4 pb-4">
+                     {[40, 55, 30, 45, 70, 60, 40, 50, 35, 45].map((height, i) => (
+                       <div key={i} className="w-full bg-[#98b090]/20 rounded-t-sm relative group">
+                          <motion.div 
+                             initial={{ height: 0 }} 
+                             whileInView={{ height: `${height}%` }} 
+                             viewport={{ once: true }} 
+                             transition={{ duration: 1, delay: i * 0.1, ease: "easeOut" }}
+                             className="absolute bottom-0 left-0 right-0 bg-[#b5cdac]/80 rounded-t-sm"
+                          />
+                       </div>
+                     ))}
+                  </div>
+               </div>
+            </div>
+
+          </motion.div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+// ------------------------------------------------------------------------------------------------
+// CTA SECTION
+// ------------------------------------------------------------------------------------------------
+function CTASection() {
+  return (
+    <div className="relative w-full bg-[#0a0a0a] rounded-[24px] border border-[rgba(255,255,255,0.06)] overflow-hidden flex flex-col items-center justify-center py-32 lg:py-48 shadow-[0_0_80px_rgba(0,0,0,0.8)] mt-12">
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-[60%] h-[60%] rounded-full bg-[#98b090]/[0.05] blur-[150px]" />
+        <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} />
+      </div>
+
+      <motion.div 
+        initial={{ opacity: 0, y: 30 }} 
+        whileInView={{ opacity: 1, y: 0 }} 
+        viewport={{ once: true, margin: "-100px" }} 
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="relative z-10 flex flex-col items-center text-center px-6"
+      >
+        <h2 className="font-[family-name:var(--font-instrument)] text-[56px] lg:text-[72px] text-white leading-[1.05] max-w-[800px] mb-6 font-normal tracking-[-0.02em]">
+          Everything you need to understand your codebase.
+        </h2>
+        <p className="font-[family-name:var(--font-inter)] text-[18px] lg:text-[20px] text-[#a1a1aa] leading-[1.6] mb-12 font-light tracking-wide">
+          Start exploring today.
+        </p>
+        
+        <button className="h-[52px] px-8 bg-white text-black rounded-full font-[family-name:var(--font-inter)] text-[15px] font-semibold tracking-wide hover:bg-[#e3e2de] hover:scale-[1.02] transition-all duration-300 shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center gap-2 group">
+          Get Started for Free
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+        </button>
+      </motion.div>
+    </div>
   );
 }

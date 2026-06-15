@@ -73,8 +73,8 @@ export function HeroNodeGraph() {
   return (
     <div className="absolute inset-0 z-0 h-full w-full pointer-events-none">
       <Canvas camera={{ position: [0, 0, 15], fov: 45 }} dpr={[1, 1.5]}>
-        <color attach="background" args={["#0C0A09"]} />
-        <fog attach="fog" args={["#0C0A09", 10, 35]} />
+        <color attach="background" args={["#050505"]} />
+        <fog attach="fog" args={["#050505", 10, 35]} />
         <AntigravityField />
       </Canvas>
     </div>

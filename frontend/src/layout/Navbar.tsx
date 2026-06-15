@@ -14,26 +14,18 @@ export function Navbar() {
         href="/"
         className="flex items-center gap-[12px] group"
       >
-        <div className="flex h-[32px] w-[32px] items-center justify-center rounded-full bg-transparent border border-[#CCD67F]/40">
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#CCD67F"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <path 
-              d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" 
-              className="origin-center transition-transform duration-300 ease-in-out group-hover:rotate-[-10deg]"
-            />
-            <path 
-              d="M2 12h20" 
-              className="origin-center transition-transform duration-300 ease-in-out group-hover:rotate-[10deg]"
-            />
+        <div className="flex h-8 w-8 items-center justify-center text-[#CCD67F] transition-transform duration-300 ease-in-out group-hover:scale-110">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M8 9h8" />
+            <path d="M9 4h6" />
+            <path d="M10 14h4" />
+            <path d="M12 2v2" />
+            <path d="m8 22 1-13" />
+            <path d="m16 22-1-13" />
+            <path d="M4 22h16" />
+            <path d="M10 2l-1 2" />
+            <path d="M14 2l1 2" />
+            <path d="M12 18v.01" />
           </svg>
         </div>
         <span

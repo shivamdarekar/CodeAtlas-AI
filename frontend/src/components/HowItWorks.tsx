@@ -169,7 +169,7 @@ export function HowItWorks() {
   };
 
   return (
-    <section id="workflow" ref={sectionRef} className="relative py-32 bg-[#0C0A09] border-t border-[#8A5F41]/10">
+    <section id="workflow" ref={sectionRef} className="relative py-32 bg-[#050505] border-t border-[#8A5F41]/10">
       <div className="mx-auto max-w-[1400px] px-6">
         <div className="text-center max-w-2xl mx-auto mb-20">
           <span
