@@ -18,29 +18,26 @@ export function Navbar() {
         {/* Brand */}
         <Link
           href="/"
-          className="flex items-center gap-2 transition-opacity hover:opacity-80"
+          className="flex items-center gap-2 transition-opacity hover:opacity-80 group"
         >
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0C0A09] border border-[#8A5F41]/30">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#CCD67F"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
-              <path d="M2 12h20" />
+          <div className="flex h-8 w-8 items-center justify-center text-[#CCD67F] transition-transform duration-300 ease-in-out group-hover:scale-110">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8 9h8" />
+              <path d="M9 4h6" />
+              <path d="M10 14h4" />
+              <path d="M12 2v2" />
+              <path d="m8 22 1-13" />
+              <path d="m16 22-1-13" />
+              <path d="M4 22h16" />
+              <path d="M10 2l-1 2" />
+              <path d="M14 2l1 2" />
+              <path d="M12 18v.01" />
             </svg>
           </div>
           <span
-            className="font-[family-name:var(--font-display)] text-[13px] font-semibold text-[#F3E4C9]"
-            style={{ letterSpacing: "var(--tracking-wide)" }}
+            className="font-[family-name:var(--font-inter)] text-[18px] font-[700] text-[#F3E4C9] tracking-[-0.02em]"
           >
-            CodeAtlas
+            CodeAtlas AI
           </span>
         </Link>
 
