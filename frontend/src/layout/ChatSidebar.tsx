@@ -1,11 +1,9 @@
 "use client";
-import { FolderGit2, Trash2, Layout, MessageSquare } from "lucide-react";
+import { FolderGit2, Trash2, Layout, MessageSquare, FileCode2, Boxes } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRepoStore } from "@/store/repo-store";
 import { useUiStore } from "@/store/ui-store";
 import { useChatStore } from "@/store/chat-store";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function ChatSidebar() {
   const router = useRouter();
@@ -21,69 +19,105 @@ export function ChatSidebar() {
 
   if (!activeRepo) return null;
 
+  const views = [
+    { id: "chat" as const, label: "Chat", icon: MessageSquare },
+    { id: "canvas" as const, label: "Codebase Canvas", icon: Layout },
+  ];
+
+  const stats = [
+    { label: "Scanned Files", value: activeRepo.indexing.scannedFiles, icon: FileCode2 },
+    { label: "Indexed Chunks", value: activeRepo.indexing.indexedChunks, icon: Boxes },
+  ];
+
   return (
-    <div className="w-64 h-screen border-r border-[#8A5F41]/20 bg-[#121110] flex flex-col hidden md:flex shrink-0">
-      <div className="p-4 border-b border-[#8A5F41]/20">
-        <h2 className="text-xl font-[family-name:var(--font-display)] text-[#F3E4C9] mb-4">CodeAtlas</h2>
-        
-        <div className="bg-[#1C1917] border border-[#8A5F41]/30 p-3 rounded-xl">
-          <div className="flex items-center space-x-2 text-[#F3E4C9] mb-1 font-mono text-sm break-all">
-            <FolderGit2 className="w-4 h-4 text-[#CCD67F] shrink-0" />
-            <span className="truncate">{activeRepo.repoName}</span>
+    <div className="w-[280px] h-screen border-r border-white/[0.04] bg-[#0c0c0b] flex flex-col hidden md:flex shrink-0">
+      {/* Brand */}
+      <div className="px-5 pt-5 pb-4">
+        <h2 className="text-lg font-[family-name:var(--font-display)] font-semibold text-[#e3e2de] tracking-tight">
+          CodeAtlas
+        </h2>
+      </div>
+
+      {/* Repo card */}
+      <div className="px-4 pb-4">
+        <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3.5">
+          <div className="flex items-center gap-2.5 mb-1.5">
+            <FolderGit2 className="w-4 h-4 text-[#CCD67F] shrink-0" strokeWidth={1.5} />
+            <span className="text-sm font-medium text-[#e3e2de] truncate">
+              {activeRepo.repoName}
+            </span>
           </div>
-          <div className="text-xs text-[#A77F60] truncate">{activeRepo.owner}</div>
+          <div className="text-xs text-[#6b6e66] truncate pl-[26px]">
+            {activeRepo.owner}
+          </div>
         </div>
       </div>
 
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
-          <div>
-            <div className="text-xs font-mono uppercase tracking-widest text-[#A77F60] mb-2">Views</div>
-            <div className="space-y-1">
-              <Button
-                variant="ghost"
-                className={`w-full justify-start ${activeView === "chat" ? "bg-[#1C1917] text-[#CCD67F]" : "text-[#F3E4C9] hover:text-[#CCD67F] hover:bg-[#1C1917]/50"}`}
-                onClick={() => setActiveView("chat")}
+      {/* Navigation */}
+      <div className="px-4 flex-1">
+        <div className="text-[10px] font-medium uppercase tracking-[0.1em] text-[#4a4d46] mb-2 px-1">
+          Views
+        </div>
+        <div className="flex flex-col gap-0.5">
+          {views.map((view) => {
+            const Icon = view.icon;
+            const isActive = activeView === view.id;
+            return (
+              <button
+                key={view.id}
+                onClick={() => setActiveView(view.id)}
+                className={`
+                  w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium
+                  transition-all duration-150 active:scale-[0.98] text-left
+                  ${isActive
+                    ? "bg-white/[0.05] text-[#CCD67F] border border-white/[0.06]"
+                    : "text-[#8e9289] hover:text-[#e3e2de] hover:bg-white/[0.03] border border-transparent"
+                  }
+                `}
               >
-                <MessageSquare className="w-4 h-4 mr-2" />
-                Chat Interface
-              </Button>
-              <Button
-                variant="ghost"
-                className={`w-full justify-start ${activeView === "canvas" ? "bg-[#1C1917] text-[#CCD67F]" : "text-[#F3E4C9] hover:text-[#CCD67F] hover:bg-[#1C1917]/50"}`}
-                onClick={() => setActiveView("canvas")}
-              >
-                <Layout className="w-4 h-4 mr-2" />
-                Codebase Canvas
-              </Button>
-            </div>
+                <Icon className="w-4 h-4 shrink-0" strokeWidth={1.5} />
+                {view.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Stats */}
+        <div className="mt-6">
+          <div className="text-[10px] font-medium uppercase tracking-[0.1em] text-[#4a4d46] mb-2 px-1">
+            Indexing
           </div>
-          
-          <div>
-            <div className="text-xs font-mono uppercase tracking-widest text-[#A77F60] mb-2">Indexing Stats</div>
-            <div className="text-sm text-[#F3E4C9] space-y-1 bg-[#1C1917]/50 p-3 rounded-lg border border-[#8A5F41]/10">
-              <div className="flex justify-between">
-                <span>Scanned Files:</span>
-                <span className="text-[#CCD67F]">{activeRepo.indexing.scannedFiles}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Indexed Chunks:</span>
-                <span className="text-[#CCD67F]">{activeRepo.indexing.indexedChunks}</span>
-              </div>
-            </div>
+          <div className="flex flex-col gap-2">
+            {stats.map((stat) => {
+              const Icon = stat.icon;
+              return (
+                <div
+                  key={stat.label}
+                  className="flex items-center justify-between px-3 py-2 rounded-lg bg-white/[0.02] border border-white/[0.04]"
+                >
+                  <div className="flex items-center gap-2 text-xs text-[#6b6e66]">
+                    <Icon className="w-3.5 h-3.5" strokeWidth={1.5} />
+                    {stat.label}
+                  </div>
+                  <span className="text-xs font-medium text-[#e3e2de] tabular-nums">
+                    {stat.value.toLocaleString()}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
-      </ScrollArea>
+      </div>
 
-      <div className="p-4 border-t border-[#8A5F41]/20">
-        <Button 
-          variant="ghost" 
-          className="w-full text-red-400 hover:text-red-300 hover:bg-red-950/30 justify-start"
+      {/* Clear action */}
+      <div className="p-4 border-t border-white/[0.04]">
+        <button
           onClick={handleClear}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-[#6b6e66] hover:text-red-400 hover:bg-red-950/20 transition-all duration-150 active:scale-[0.98]"
         >
-          <Trash2 className="w-4 h-4 mr-2" />
+          <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
           Clear Context
-        </Button>
+        </button>
       </div>
     </div>
   );

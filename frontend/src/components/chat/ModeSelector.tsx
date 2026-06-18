@@ -1,4 +1,6 @@
-import { MessageSquare, LayoutDashboard, GitBranch, Share2, LucideIcon } from "lucide-react";
+"use client";
+
+import { MessageSquare, LayoutDashboard, GitBranch, Share2, type LucideIcon } from "lucide-react";
 import { useChatStore } from "@/store/chat-store";
 import type { ChatMode } from "@/types";
 
@@ -15,25 +17,32 @@ export function ModeSelector() {
   const { activeMode, setMode } = useChatStore();
 
   return (
-    <div className="flex space-x-2 p-2 bg-[#121110] border border-[#8A5F41]/20 rounded-xl mb-2 w-max">
+    <div className="flex items-center gap-1">
       {MODES.map((mode) => {
         const config = MODE_CONFIG[mode];
         const Icon = config.icon;
         const isActive = activeMode === mode;
-        
+
         return (
           <button
             key={mode}
             onClick={() => setMode(mode)}
-            className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              isActive 
-                ? "bg-[#1C1917] text-[#CCD67F] border border-[#8A5F41]/30" 
-                : "text-[#A77F60] hover:text-[#F3E4C9] hover:bg-[#1C1917]/50 border border-transparent"
-            }`}
             title={config.description}
+            className={`
+              relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+              transition-all duration-200 select-none
+              active:scale-[0.97]
+              ${isActive
+                ? "text-[#CCD67F] bg-[#CCD67F]/[0.08]"
+                : "text-[#6b6e66] hover:text-[#e3e2de] hover:bg-white/[0.04]"
+              }
+            `}
           >
-            <Icon className="w-4 h-4" />
+            <Icon className="w-3.5 h-3.5" strokeWidth={1.5} />
             <span>{config.label}</span>
+            {isActive && (
+              <span className="absolute bottom-0 left-3 right-3 h-[1.5px] bg-[#CCD67F]/60 rounded-full" />
+            )}
           </button>
         );
       })}

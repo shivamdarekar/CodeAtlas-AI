@@ -38,7 +38,7 @@ export function RepoIndexForm() {
     setIndexing(true);
     try {
       const response = await api.indexRepository(values.repoUrl, values.branch);
-      if (response.data.statusCode === 200 && response.data.data) {
+      if ((response.data.statusCode === 200 || response.data.statusCode === 201) && response.data.data) {
         setActiveRepo(response.data.data);
         router.push(`/${response.data.data.namespace}/chat`);
       } else {

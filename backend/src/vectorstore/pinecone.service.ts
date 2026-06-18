@@ -35,6 +35,11 @@ type PineconeRecord = {
 };
 
 function chunkMetadata(chunk: RepositoryChunk): Record<string, any> {
+  // Truncate content to ~30KB to stay well under Pinecone's 40KB limit
+  const safeContent = chunk.content.length > 30000 
+    ? chunk.content.substring(0, 30000) + "\n...[TRUNCATED]"
+    : chunk.content;
+
   return {
     repoId: chunk.repoId,
     repoName: chunk.repoName,
@@ -49,14 +54,14 @@ function chunkMetadata(chunk: RepositoryChunk): Record<string, any> {
     startLine: chunk.startLine,
     endLine: chunk.endLine,
     symbolName: chunk.symbolName ?? "",
-    content: chunk.content,
+    content: safeContent,
     contentLength: chunk.contentLength,
-    imports: chunk.imports,
-    exports: chunk.exports,
-    functionCalls: chunk.functionCalls || [],
-    componentDependencies: chunk.componentDependencies || [],
-    hooksUsed: chunk.hooksUsed || [],
-    apiCalls: chunk.apiCalls || [],
+    imports: chunk.imports?.slice(0, 100) || [],
+    exports: chunk.exports?.slice(0, 100) || [],
+    functionCalls: chunk.functionCalls?.slice(0, 100) || [],
+    componentDependencies: chunk.componentDependencies?.slice(0, 100) || [],
+    hooksUsed: chunk.hooksUsed?.slice(0, 100) || [],
+    apiCalls: chunk.apiCalls?.slice(0, 100) || [],
     directory: chunk.directory,
   };
 }

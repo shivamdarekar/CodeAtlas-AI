@@ -9,6 +9,7 @@ import { ChatInput } from "@/components/chat/ChatInput";
 import CodebaseGraph from "@/components/diagrams/CodebaseGraph";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+import { GitBranch } from "lucide-react";
 
 export function AppShell({ namespace }: { namespace: string }) {
   const router = useRouter();
@@ -16,37 +17,54 @@ export function AppShell({ namespace }: { namespace: string }) {
   const { activeView } = useUiStore();
 
   useEffect(() => {
-    // If we land here but there's no active repo in Zustand (e.g. they opened a link directly),
-    // ideally we'd fetch repo details from API. For now, if no repo, redirect to analyze.
     if (!activeRepo || activeRepo.namespace !== namespace) {
       toast.error("Repository context not found. Please analyze again.");
       router.push("/analyze");
       return;
     }
 
-    // Fetch the summary for the graph view
     if (!repoSummary && activeRepo) {
       api.getRepoSummary(namespace).then((res) => {
         if (res.data.statusCode === 200 && res.data.data) {
           setRepoSummary(res.data.data);
         }
       }).catch(() => {
-        // Silently fail or log, overview might just be empty
+        // Silently fail, overview might just be empty
       });
     }
   }, [namespace, activeRepo, repoSummary, router, setRepoSummary]);
 
-  if (!activeRepo) return null; // Wait for redirect
+  if (!activeRepo) return null;
 
   return (
-    <div className="flex h-screen bg-[#0C0A09] text-[#F3E4C9] overflow-hidden font-sans">
+    <div className="flex h-screen bg-[#0a0a0a] text-[#e3e2de] overflow-hidden font-sans">
       <ChatSidebar />
-      
+
       <div className="flex-1 flex flex-col relative h-full">
+        {/* Top bar */}
+        <div className="shrink-0 h-12 flex items-center justify-between px-5 border-b border-white/[0.04] bg-[#0a0a0a]">
+          <div className="flex items-center gap-2 text-xs text-[#6b6e66]">
+            <GitBranch className="w-3.5 h-3.5" strokeWidth={1.5} />
+            <span className="text-[#8e9289] font-medium">{activeRepo.owner}/{activeRepo.repoName}</span>
+            {activeRepo.branch && (
+              <>
+                <span className="text-[#4a4d46]">/</span>
+                <span className="text-[#6b6e66] font-mono text-[11px]">{activeRepo.branch}</span>
+              </>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] text-[#4a4d46] font-mono">
+              {activeRepo.indexing.indexedChunks.toLocaleString()} chunks indexed
+            </span>
+          </div>
+        </div>
+
+        {/* Main content */}
         {activeView === "chat" ? (
           <>
             <ChatWindow />
-            <div className="shrink-0 bg-gradient-to-t from-[#0C0A09] to-transparent pt-4 pb-2 px-2 md:px-0 z-10">
+            <div className="shrink-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a] to-transparent pt-2 z-10">
               <ChatInput />
             </div>
           </>
@@ -56,9 +74,9 @@ export function AppShell({ namespace }: { namespace: string }) {
               <CodebaseGraph summary={repoSummary} />
             ) : (
               <div className="flex-1 flex items-center justify-center h-full">
-                <div className="text-[#A77F60] flex flex-col items-center">
-                  <div className="w-8 h-8 border-4 border-[#8A5F41]/30 border-t-[#CCD67F] rounded-full animate-spin mb-4"></div>
-                  Loading Codebase Canvas...
+                <div className="text-[#6b6e66] flex flex-col items-center gap-3">
+                  <div className="w-6 h-6 border-2 border-white/[0.06] border-t-[#CCD67F] rounded-full animate-spin" />
+                  <span className="text-xs">Loading Codebase Canvas…</span>
                 </div>
               </div>
             )}

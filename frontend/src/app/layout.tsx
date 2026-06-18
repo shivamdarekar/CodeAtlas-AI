@@ -47,6 +47,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-scroll-behavior="smooth"
       className={`dark ${geistSans.variable} ${geistMono.variable} ${outfit.variable} ${instrumentSerif.variable} ${inter.variable}`}
     >
       <body className="antialiased">
