@@ -47,3 +47,26 @@ export async function loadRepositorySummary(
     throw error;
   }
 }
+
+/**
+ * Lists all saved repository summaries from disk.
+ */
+export async function listRepositorySummaries(): Promise<RepositorySummary[]> {
+  await ensureDirectoryExists();
+  const files = await fs.readdir(SUMMARIES_DIR);
+  const jsonFiles = files.filter((f) => f.endsWith(".json"));
+
+  const summaries: RepositorySummary[] = [];
+  for (const file of jsonFiles) {
+    try {
+      const filePath = path.join(SUMMARIES_DIR, file);
+      const data = await fs.readFile(filePath, "utf-8");
+      summaries.push(JSON.parse(data) as RepositorySummary);
+    } catch {
+      // Skip corrupted files
+      console.warn(`[summary] Skipping unreadable summary file: ${file}`);
+    }
+  }
+
+  return summaries;
+}

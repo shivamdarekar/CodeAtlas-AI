@@ -58,3 +58,20 @@ export interface GraphNodeData {
   filePath: string;
   type: GraphNodeType;
 }
+
+// ── Repository Summary (from /api/v1/repos) ──────────────────────────────────
+export interface RepositorySummary {
+  repoId: string;
+  repoName: string;
+  namespace: string;
+  pages: string[];
+  components: string[];
+  services: string[];
+  hooks: string[];
+  apiRoutes: string[];
+  stats: {
+    files: number;
+    components: number;
+    functions: number;
+  };
+}

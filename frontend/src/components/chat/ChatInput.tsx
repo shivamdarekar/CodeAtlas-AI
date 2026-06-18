@@ -26,21 +26,18 @@ export function ChatInput() {
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    
     if (!query.trim() || isStreaming || !activeRepo) return;
 
     const currentQuery = query.trim();
     setQuery("");
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-    }
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
 
     addMessage({ role: "user", content: currentQuery, mode: activeMode });
     setStreaming(true);
 
     try {
       const response = await api.chat(activeRepo.namespace, currentQuery, activeMode);
-      if (response.data.statusCode === 200 && response.data.data) {
+      if ((response.data.statusCode === 200 || response.data.statusCode === 201) && response.data.data) {
         addMessage({
           role: "assistant",
           content: response.data.data.answer,
@@ -65,38 +62,38 @@ export function ChatInput() {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4 relative">
-      <ModeSelector />
-      
-      <form 
-        onSubmit={handleSubmit}
-        className="relative flex items-end bg-[#1C1917]/80 backdrop-blur-md border border-[#8A5F41]/30 rounded-2xl p-2 shadow-lg"
-      >
-        <textarea
-          ref={textareaRef}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Ask a question about the codebase..."
-          className="flex-1 max-h-[200px] bg-transparent text-[#F3E4C9] placeholder:text-[#A77F60]/50 p-3 resize-none outline-none focus:ring-0 text-sm"
-          rows={1}
-          disabled={isStreaming}
-        />
-        
-        <button
-          type="submit"
-          disabled={!query.trim() || isStreaming}
-          className="p-3 m-1 bg-[#CCD67F] text-[#0C0A09] rounded-xl hover:bg-[#CCD67F]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {isStreaming ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <Send className="w-5 h-5" />
-          )}
-        </button>
-      </form>
-      <div className="text-center mt-2 text-xs text-[#A77F60]/70">
-        AI responses can be inaccurate. Please verify information.
+    <div className="w-full max-w-3xl mx-auto px-4 pb-4 pt-2">
+      {/* Unified input container */}
+      <div className="bg-[#111210] border border-white/[0.06] rounded-2xl overflow-hidden shadow-[0_-4px_24px_-6px_rgba(0,0,0,0.4)]">
+        {/* Mode selector row */}
+        <div className="flex items-center px-3 pt-2.5 pb-1 border-b border-white/[0.04]">
+          <ModeSelector />
+        </div>
+
+        {/* Input row */}
+        <form onSubmit={handleSubmit} className="flex items-end gap-2 p-2">
+          <textarea
+            ref={textareaRef}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask about the codebase…"
+            className="flex-1 max-h-[200px] bg-transparent text-[#e3e2de] placeholder:text-[#4a4d46] px-3 py-2.5 resize-none outline-none text-[14px] leading-relaxed"
+            rows={1}
+            disabled={isStreaming}
+          />
+          <button
+            type="submit"
+            disabled={!query.trim() || isStreaming}
+            className="shrink-0 p-2.5 bg-[#CCD67F] text-[#0a0a0a] rounded-xl hover:bg-[#d8e18f] disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-150 active:scale-[0.95]"
+          >
+            {isStreaming ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+          </button>
+        </form>
       </div>
     </div>
   );

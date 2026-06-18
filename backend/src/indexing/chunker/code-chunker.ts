@@ -109,7 +109,16 @@ function chunkByLines(
 	const flush = (endLine: number) => {
 		const text = current.join("\n").trim();
 		if (text) {
-			chunks.push(createChunk(context, file, { kind, startLine, endLine, content: text }, chunks.length));
+			if (text.length > MAX_CHUNK_SIZE * 2) {
+				// Handle massive lines (like minified code or SVG paths)
+				for (let i = 0; i < text.length; i += MAX_CHUNK_SIZE) {
+					chunks.push(createChunk(context, file, { 
+						kind, startLine, endLine, content: text.slice(i, i + MAX_CHUNK_SIZE) 
+					}, chunks.length));
+				}
+			} else {
+				chunks.push(createChunk(context, file, { kind, startLine, endLine, content: text }, chunks.length));
+			}
 		}
 	};
 
