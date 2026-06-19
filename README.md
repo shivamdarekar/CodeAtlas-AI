@@ -1,6 +1,6 @@
 # CodeAtlas — AI-Powered Codebase Intelligence
 
-> Index any GitHub repository. Trace architecture. Get precise answers with AI.
+> Index any GitHub repository or ZIP archive. Trace architecture. Get precise answers with AI.
 
 CodeAtlas parses your codebase using a **TypeScript compiler AST** — not text splitting — to build a true dependency graph of your project's functions, components, classes, hooks, and API routes. Then lets you explore it through natural language chat, execution flow traces, and auto-generated visual diagrams.
 
@@ -32,8 +32,11 @@ Most AI code tools split files by character count and hope the right context lan
 | **Mermaid Diagram Generation** | LLM produces valid Mermaid flowcharts from real AST dependency metadata |
 | **React Flow Canvas** | Interactive node graph to visually explore components, pages, hooks, and API routes |
 | **Smart Noise Filtering** | Strips JS built-ins (`Math.floor`, `console.log`, `JSON.stringify`) from metadata |
-| **Batch Embedding** | Sends 8 texts per HuggingFace API call with retry/backoff — 8× faster than per-chunk embedding |
-| **Auto Cleanup** | Cloned repos are deleted from disk after indexing completes |
+| **Batch Embedding** | Sends texts in batches per HuggingFace API call with retry/backoff |
+| **ZIP Upload Support** | Upload any project as a `.zip` archive — no GitHub URL required (up to 200 MB) |
+| **Commit Summary** | Fetches last 50 commits during indexing, stores them, and generates an AI-powered grouped summary on demand |
+| **SSE Progress Streaming** | Real-time indexing progress streamed to the frontend via Server-Sent Events |
+| **Auto Cleanup** | Cloned/extracted repos are deleted from disk after indexing completes |
 
 ---
 
@@ -60,7 +63,9 @@ Most AI code tools split files by character count and hope the right context lan
 | **HuggingFace Inference API** | Batch embedding via `BAAI/bge-small-en-v1.5` (384-dim) |
 | **Groq (Llama-3.3-70b)** | LLM inference — fast, deterministic at `temperature: 0.1` |
 | **LangChain (`@langchain/groq`)** | LLM prompt orchestration |
-| **simple-git** | Shallow clone (`--depth 1`) of GitHub repositories |
+| **simple-git** | Depth-50 clone of GitHub repositories — captures commit history |
+| **unzipper** | ZIP archive extraction for local project uploads |
+| **multer** | Multipart file upload handling for ZIP files |
 | **Zod** | Runtime request validation |
 | **rimraf** | Post-indexing disk cleanup |
 
@@ -70,7 +75,7 @@ Most AI code tools split files by character count and hope the right context lan
 | **Next.js 16 (App Router)** | React framework with file-based routing |
 | **TypeScript** | Type-safe frontend |
 | **Tailwind CSS + shadcn/ui** | UI components and styling |
-| **Zustand** | Global state — active repo, chat history, mode |
+| **Zustand** | Split stores — `repo-store`, `chat-store`, `ui-store` |
 | **Axios** | HTTP client |
 | **react-markdown + react-syntax-highlighter** | Markdown and code block rendering for AI responses |
 | **Mermaid.js** | Renders LLM-generated diagram blocks as interactive SVGs |
@@ -85,8 +90,11 @@ Most AI code tools split files by character count and hope the right context lan
 ```
 ├── backend/
 │   └── src/
-│       ├── ai/                   # LLM prompt construction (Groq/LangChain)
+│       ├── ai/                   # LLM prompt construction (Groq/LangChain) — 4 mode prompts
 │       ├── controllers/          # Express route handlers
+│       │   ├── chat.controller.ts
+│       │   ├── indexing.controller.ts
+│       │   └── repository.controller.ts  # includes getCommitSummaryController
 │       ├── indexing/
 │       │   ├── chunker/          # AST chunker (ts-morph) — functions, classes, components, methods
 │       │   ├── embeddings/       # HuggingFace batch embedding service
@@ -94,7 +102,12 @@ Most AI code tools split files by character count and hope the right context lan
 │       ├── middlewares/          # Global error handler
 │       ├── retrieval/            # Multi-hop retrieval engine
 │       ├── routes/               # Express route definitions
-│       ├── services/             # Business logic — chat, indexing, summary, repository
+│       ├── services/
+│       │   ├── chat.service.ts
+│       │   ├── indexing.service.ts   # captures git commits during indexing
+│       │   ├── repository.service.ts # --depth 50 clone
+│       │   ├── summary.service.ts
+│       │   └── zip.service.ts        # ZIP extraction + indexing
 │       ├── types/                # TypeScript interfaces
 │       ├── utils/                # File utilities, API helpers, ignore lists
 │       ├── validators/           # Zod request schemas
@@ -106,11 +119,14 @@ Most AI code tools split files by character count and hope the right context lan
 │       ├── effects/              # Three.js canvas effects
 │       ├── layout/               # Sidebar, Navbar, AppShell
 │       ├── lib/                  # Axios API client
-│       ├── store/                # Zustand global state
+│       ├── store/
+│       │   ├── repo-store.ts     # active repo + history (persisted)
+│       │   ├── chat-store.ts     # messages, streaming, mode
+│       │   └── ui-store.ts       # sidebar, active view
 │       └── types/                # Frontend TypeScript types
 └── docs/
-    ├── system_architecture.md    # Full backend deep-dive — AST, multi-hop, embeddings
-    └── frontend_architecture.md  # Frontend implementation guide — Zustand, React Flow, Mermaid
+    ├── CodeAtlas_Architecture_Guide.md   # Full backend deep-dive
+    └── frontend_architecture.md          # Frontend implementation guide
 ```
 
 ---
@@ -129,8 +145,8 @@ Most AI code tools split files by character count and hope the right context lan
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/codeatlas.git
-cd codeatlas
+git clone https://github.com/shivamdarekar/CodeAtlas-AI.git
+cd CodeAtlas-AI
 ```
 
 ---
@@ -195,21 +211,38 @@ The app will be running at `http://localhost:3000`.
 
 ## 🔌 API Reference
 
-### Index a Repository
+### Index a GitHub Repository (streaming)
 ```
-POST /api/v1/repo/analyze
+POST /api/v1/repos/analyze/stream
 Body: { "repoUrl": "https://github.com/user/repo", "branch": "main" }
+```
+
+### Upload a ZIP Archive (streaming)
+```
+POST /api/v1/repos/upload/stream
+Body: multipart/form-data — field: zipFile (.zip, max 200 MB)
 ```
 
 ### Chat with Indexed Repo
 ```
-POST /api/v1/repo/:namespace/chat
+POST /api/v1/repos/:namespace/chat
 Body: { "query": "How does authentication work?", "mode": "chat" }
 ```
 
 ### Get Repository Summary
 ```
-GET /api/v1/repo/:namespace/summary
+GET /api/v1/repos/:namespace/summary
+```
+
+### Get AI Commit Summary
+```
+GET /api/v1/repos/:namespace/commits/summary
+```
+Returns an LLM-generated grouped summary of the last 50 commits. Only available for GitHub-cloned repos (not ZIP uploads).
+
+### List All Indexed Repositories
+```
+GET /api/v1/repos
 ```
 
 **Available modes:** `chat` · `overview` · `flow` · `diagram`
@@ -220,8 +253,8 @@ GET /api/v1/repo/:namespace/summary
 
 | Document | Description |
 |---|---|
-| [System Architecture Guide](./docs/system_architecture.md) | Deep-dive into AST parsing, multi-hop retrieval, embedding pipeline, Pinecone record structure, prompt engineering, and system design interview talking points |
-| [Frontend Architecture Guide](./docs/frontend_architecture.md) | Complete frontend build guide — Zustand store design, React Flow canvas, Mermaid renderer, chat mode rendering strategy, component build order |
+| [System Architecture Guide](./docs/CodeAtlas_Architecture_Guide.md) | Deep-dive into AST parsing, multi-hop retrieval, embedding pipeline, Pinecone record structure, prompt engineering, ZIP upload flow, commit summary feature, and system design interview talking points |
+| [Frontend Architecture Guide](./docs/frontend_architecture.md) | Frontend implementation guide — split Zustand stores, React Flow canvas, Mermaid renderer, chat mode rendering strategy, ZIP upload UI, commit summary button |
 
 ---
 

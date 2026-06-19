@@ -1,116 +1,128 @@
-# CodeAtlas — Frontend Implementation Guide
-*Complete reference for building the frontend against the real backend.*
+# CodeAtlas — Frontend Architecture Guide
+*Reflects the current built state of the frontend.*
 
 ---
 
 ## Table of Contents
-1. [What Already Exists](#1-what-already-exists)
-2. [Full Tech Stack](#2-full-tech-stack)
-3. [Final Folder Structure](#3-final-folder-structure)
+1. [What Is Built](#1-what-is-built)
+2. [Tech Stack](#2-tech-stack)
+3. [Folder Structure](#3-folder-structure)
 4. [Backend API Contract](#4-backend-api-contract)
 5. [TypeScript Types](#5-typescript-types)
 6. [Axios API Client](#6-axios-api-client)
-7. [Zustand Store — Complete Design](#7-zustand-store--complete-design)
+7. [Zustand Stores — Split Design](#7-zustand-stores--split-design)
 8. [Pages & Routing](#8-pages--routing)
-9. [The Chat Interface — 4 Mode Rendering](#9-the-chat-interface--4-mode-rendering)
-10. [Mermaid.js Renderer](#10-mermaidjs-renderer)
-11. [React Flow — Codebase Graph Canvas](#11-react-flow--codebase-graph-canvas)
-12. [UI Design System](#12-ui-design-system)
-13. [Component Build Order](#13-component-build-order)
+9. [Repository Indexing — GitHub + ZIP](#9-repository-indexing--github--zip)
+10. [The Chat Interface — 4 Mode Rendering](#10-the-chat-interface--4-mode-rendering)
+11. [Commit Summary Feature](#11-commit-summary-feature)
+12. [Mermaid.js Renderer](#12-mermaidjs-renderer)
+13. [React Flow — Codebase Graph Canvas](#13-react-flow--codebase-graph-canvas)
+14. [Chat Sidebar](#14-chat-sidebar)
+15. [UI Design System](#15-ui-design-system)
 
 ---
 
-## 1. What Already Exists
+## 1. What Is Built
 
-The landing page is fully built. Do not touch these files:
-
-| File | Status |
-|---|---|
-| `src/app/page.tsx` | ✅ Done — Landing page shell |
-| `src/app/layout.tsx` | ✅ Done — Fonts, Toaster, TooltipProvider |
-| `src/components/HeroSection.tsx` | ✅ Done — Hero with 3D particle canvas |
-| `src/components/FeatureCards.tsx` | ✅ Done — Bento grid feature cards |
-| `src/components/HowItWorks.tsx` | ✅ Done — Interactive terminal stepper |
-| `src/layout/Navbar.tsx` | ✅ Done — Floating pill navbar |
-| `src/layout/Footer.tsx` | ✅ Done |
-| `src/effects/HeroNodeGraph.tsx` | ✅ Done — Three.js particle field |
-| `src/store/use-app-store.ts` | ⚠️ Partial — needs expanding |
-| `src/lib/api.ts` | ❌ Empty — needs full implementation |
-| `src/types/index.ts` | ❌ Empty — needs all types |
-
-**All shadcn/ui primitives are installed** in `src/components/ui/`:
-`button`, `input`, `textarea`, `badge`, `card`, `dialog`, `sheet`, `tabs`,
-`select`, `scroll-area`, `skeleton`, `sonner`, `tooltip`, `separator`, `avatar`, `dropdown-menu`
-
----
-
-## 2. Full Tech Stack
-
-| Package | Version | Purpose |
+| File | Status | Notes |
 |---|---|---|
-| `next` | ^16 | App Router, file-based routing |
-| `react` | ^19 | UI framework |
-| `typescript` | ^6 | Type safety |
-| `tailwindcss` | ^4 | Utility CSS |
-| `zustand` | ^5 | Global state (no boilerplate) |
-| `axios` | ^1.17 | HTTP client with interceptors |
-| `react-markdown` | ^10 | Render LLM markdown responses |
-| `react-syntax-highlighter` | ^16 | Code block highlighting in chat |
-| `mermaid` | ^11 | Render LLM-generated diagrams as SVG |
-| `reactflow` | ^11 | Interactive node graph for codebase canvas |
-| `framer-motion` | ^12 | Animations (already used in landing) |
-| `@react-three/fiber` | ^9 | 3D canvas (used in HeroNodeGraph) |
-| `lucide-react` | ^1.17 | Icons |
-| `sonner` | ^2 | Toast notifications |
-| `react-hook-form` | ^7 | Form handling for repo URL input |
-| `zod` | ^4 | Form validation schemas |
+| `src/app/page.tsx` | ✅ Done | Landing page shell |
+| `src/app/layout.tsx` | ✅ Done | Fonts, Toaster, TooltipProvider |
+| `src/app/analyze/page.tsx` | ✅ Done | Repo indexing page |
+| `src/app/[namespace]/chat/page.tsx` | ✅ Done | Main chat app |
+| `src/components/HeroSection.tsx` | ✅ Done | Hero with animated dashboard preview |
+| `src/components/FeatureCards.tsx` | ✅ Done | Bento grid feature cards |
+| `src/components/HowItWorks.tsx` | ✅ Done | Interactive terminal stepper |
+| `src/layout/Navbar.tsx` | ✅ Done | Navbar — Features, Docs (→ GitHub), GitHub link, Get Started button |
+| `src/layout/Footer.tsx` | ✅ Done | |
+| `src/layout/ChatSidebar.tsx` | ✅ Done | Repo card, views, stats, commit summary, clear |
+| `src/layout/AppShell.tsx` | ✅ Done | Sidebar + main area layout |
+| `src/components/repository/RepoIndexForm.tsx` | ✅ Done | GitHub URL + ZIP upload with SSE progress |
+| `src/components/chat/ChatWindow.tsx` | ✅ Done | Scrollable message list with empty state |
+| `src/components/chat/ChatMessage.tsx` | ✅ Done | Markdown + mermaid-aware message renderer |
+| `src/components/chat/ChatInput.tsx` | ✅ Done | Input bar |
+| `src/components/chat/ModeSelector.tsx` | ✅ Done | 4-mode tab selector |
+| `src/components/diagrams/MermaidRenderer.tsx` | ✅ Done | Mermaid SVG renderer |
+| `src/components/diagrams/CodebaseGraph.tsx` | ✅ Done | React Flow canvas |
+| `src/store/repo-store.ts` | ✅ Done | Active repo + history (persisted) |
+| `src/store/chat-store.ts` | ✅ Done | Messages, streaming, mode |
+| `src/store/ui-store.ts` | ✅ Done | Sidebar open, active view |
+| `src/lib/api.ts` | ✅ Done | Axios client + all API methods |
+| `src/types/index.ts` | ✅ Done | All TypeScript interfaces |
 
 ---
 
-## 3. Final Folder Structure
+## 2. Tech Stack
+
+| Package | Purpose |
+|---|---|
+| `next` ^16 | App Router, `[namespace]/chat` dynamic routes |
+| `react` ^19 | UI framework |
+| `typescript` ^6 | Type safety |
+| `tailwindcss` ^4 | Utility CSS |
+| `zustand` ^5 | Split global stores — no Provider, no reducers |
+| `axios` ^1.17 | HTTP client with base URL + timeout config |
+| `react-hook-form` + `zod` | GitHub URL form validation |
+| `react-markdown` | Renders LLM markdown responses |
+| `react-syntax-highlighter` | Syntax-highlighted code blocks in chat |
+| `mermaid` ^11 | Renders LLM-generated `mermaid` blocks as SVG |
+| `reactflow` ^11 | Interactive node graph for codebase canvas |
+| `framer-motion` ^12 | Animations (landing page, hero) |
+| `lucide-react` | Icons throughout the app |
+| `sonner` | Toast notifications |
+| `three` + `@react-three/fiber` | 3D particle canvas on landing page |
+
+---
+
+## 3. Folder Structure
 
 ```
 src/
 ├── app/
-│   ├── page.tsx                      # / — Landing page (done)
-│   ├── layout.tsx                    # Root layout (done)
-│   ├── globals.css                   # Global styles (done)
+│   ├── page.tsx                      # / — Landing page
+│   ├── layout.tsx                    # Root layout — fonts, providers
+│   ├── globals.css
+│   ├── analyze/
+│   │   └── page.tsx                  # /analyze — repo indexing
 │   └── [namespace]/
 │       └── chat/
-│           └── page.tsx              # /[namespace]/chat — Main chat app
+│           └── page.tsx              # /[namespace]/chat — main app
 │
 ├── components/
-│   ├── ui/                           # shadcn/ui primitives (done)
+│   ├── ui/                           # shadcn/ui primitives
 │   ├── chat/
-│   │   ├── ChatWindow.tsx            # Scrollable message list
-│   │   ├── ChatMessage.tsx           # Single message bubble (markdown/mermaid aware)
-│   │   ├── ChatInput.tsx             # Input bar with mode selector
-│   │   └── ModeSelector.tsx          # Tabs: chat / overview / flow / diagram
+│   │   ├── ChatWindow.tsx            # Scrollable message list + empty state
+│   │   ├── ChatMessage.tsx           # Single message — markdown/mermaid aware
+│   │   ├── ChatInput.tsx             # Input bar
+│   │   └── ModeSelector.tsx          # chat / overview / flow / diagram tabs
 │   ├── diagrams/
-│   │   ├── MermaidRenderer.tsx       # Renders mermaid code blocks as SVG
+│   │   ├── MermaidRenderer.tsx       # Renders mermaid blocks as SVG
 │   │   └── CodebaseGraph.tsx         # React Flow canvas
 │   ├── repository/
-│   │   ├── RepoIndexForm.tsx         # GitHub URL form on landing / analyze page
-│   │   └── RepoStatusCard.tsx        # Shows indexing progress
-│   ├── HeroSection.tsx               # (done)
-│   ├── FeatureCards.tsx              # (done)
-│   └── HowItWorks.tsx                # (done)
+│   │   ├── RepoIndexForm.tsx         # GitHub URL + ZIP upload + SSE progress UI
+│   │   └── AnalyzeDashboard.tsx      # Analyze page shell
+│   ├── HeroSection.tsx               # Landing hero with animated dashboard
+│   ├── FeatureCards.tsx
+│   └── HowItWorks.tsx
 │
 ├── effects/
-│   └── HeroNodeGraph.tsx             # (done)
+│   └── HeroNodeGraph.tsx             # Three.js particle field
 │
 ├── layout/
-│   ├── Navbar.tsx                    # (done)
-│   ├── Footer.tsx                    # (done)
-│   ├── ChatSidebar.tsx               # Sidebar: repo info, mode, clear chat
-│   └── AppShell.tsx                  # Layout wrapper for chat page
+│   ├── Navbar.tsx                    # Features / Docs / GitHub / Get Started
+│   ├── Footer.tsx
+│   ├── ChatSidebar.tsx               # Repo card, views, stats, commit summary, clear
+│   ├── AppShell.tsx                  # Sidebar + chat or canvas
+│   └── NavbarClient.tsx              # Dynamic import wrapper (SSR-safe)
 │
 ├── lib/
-│   ├── api.ts                        # Axios client + all API calls
-│   └── utils.ts                      # cn() helper (done)
+│   ├── api.ts                        # Axios client — all API methods
+│   └── utils.ts                      # cn() helper
 │
 ├── store/
-│   └── use-app-store.ts              # Zustand global state (expand existing)
+│   ├── repo-store.ts                 # activeRepo, repoSummary, history (persisted)
+│   ├── chat-store.ts                 # messages, isStreaming, activeMode
+│   └── ui-store.ts                   # isSidebarOpen, activeView
 │
 └── types/
     └── index.ts                      # All TypeScript interfaces
@@ -120,110 +132,59 @@ src/
 
 ## 4. Backend API Contract
 
-The backend runs on `http://localhost:5000`. These are the exact real endpoints.
+Base URL: `http://localhost:5000/api/v1` (configured via `NEXT_PUBLIC_API_URL`)
 
-### POST `/api/v1/repo/analyze`
-Index a GitHub repository.
-
-**Request:**
+### POST `/repos/analyze/stream` — Index GitHub repo (SSE)
 ```json
-{ "repoUrl": "https://github.com/user/repo", "branch": "main" }
+Request:  { "repoUrl": "https://github.com/user/repo", "branch": "main" }
+SSE events:
+  progress → { "step": "chunk", "label": "AST parsing", "detail": "45/120 files", "pct": 38 }
+  done     → { "repository": { ...IndexedRepository } }
+  error    → { "message": "Unable to clone..." }
 ```
 
-**Response:**
-```json
-{
-  "statusCode": 200,
-  "message": "Repository indexed successfully.",
-  "data": {
-    "repoId": "b45c9245-f22e-4755-b1a8-c9903f3f041b",
-    "namespace": "b45c9245-f22e-4755-b1a8-c9903f3f041b",
-    "owner": "user",
-    "repoName": "To-do-list",
-    "sourceUrl": "https://github.com/user/repo",
-    "branch": "main",
-    "createdAt": "2025-01-01T00:00:00.000Z",
-    "indexing": {
-      "repoId": "...",
-      "namespace": "...",
-      "scannedFiles": 12,
-      "indexedChunks": 87,
-      "skippedFiles": 2
-    }
-  }
-}
+### POST `/repos/upload/stream` — Index ZIP (SSE, multipart)
+```
+Request: multipart/form-data, field: zipFile (.zip, max 200MB)
+SSE events: same shape as above
 ```
 
-**The `namespace` field is what you store in Zustand.** Every subsequent chat call uses it.
-
----
-
-### POST `/api/v1/repo/:namespace/chat`
-Send a query to the indexed repo.
-
-**Request:**
+### POST `/repos/:namespace/chat`
 ```json
-{
-  "query": "How does login work?",
-  "mode": "chat"
-}
+Request:  { "query": "How does auth work?", "mode": "chat" }
+Response: { "data": { "answer": "## Auth Flow\n...", "sources": [...] } }
+```
+**Modes:** `chat` · `overview` · `flow` · `diagram`
+
+### GET `/repos/:namespace/summary`
+```json
+Response: { "data": { "repoId", "repoName", "pages", "components", "hooks", "services", "apiRoutes", "stats" } }
 ```
 
-**`mode` options:** `"chat"` | `"overview"` | `"flow"` | `"diagram"`
-
-**Response:**
+### GET `/repos/:namespace/commits/summary`
 ```json
-{
-  "statusCode": 200,
-  "message": "Chat response generated successfully.",
-  "data": {
-    "answer": "## Authentication Flow\n\nThe login uses...",
-    "mode": "chat",
-    "chunksUsed": 4
-  }
-}
+Response: { "data": { "answer": "## Recent Development Summary\n...", "commits": [...] } }
 ```
+Returns 404 if no commits stored (ZIP upload).
 
-The `answer` field is always a **markdown string**. For `diagram` mode it will contain a ` ```mermaid ``` ` code block.
-
----
-
-### GET `/api/v1/repo/:namespace/summary`
-Get the repo overview JSON (used to build the React Flow graph).
-
-**Response:**
+### GET `/repos`
 ```json
-{
-  "data": {
-    "repoId": "...",
-    "repoName": "To-do-list",
-    "pages": ["app/page.tsx"],
-    "components": ["components/Button.tsx", "components/TaskList.tsx"],
-    "hooks": ["hooks/useTasks.ts"],
-    "services": ["services/api.ts"],
-    "apiRoutes": ["app/api/tasks/route.ts"],
-    "stats": { "totalFiles": 12, "totalChunks": 87 }
-  }
-}
+Response: { "data": [ ...RepoSummary[] ] }
 ```
-
-This JSON feeds directly into the React Flow canvas.
 
 ---
 
 ## 5. TypeScript Types
 
-Fill `src/types/index.ts` with these:
+`src/types/index.ts` — current full shape:
 
 ```typescript
-// ── API Wrapper ──────────────────────────────────────────────────────────────
 export interface ApiResponse<T> {
   statusCode: number;
   message: string;
   data: T;
 }
 
-// ── Repository ───────────────────────────────────────────────────────────────
 export interface IndexedRepository {
   repoId: string;
   namespace: string;
@@ -242,15 +203,17 @@ export interface IndexedRepository {
 export interface RepoSummary {
   repoId: string;
   repoName: string;
+  namespace: string;
   pages: string[];
   components: string[];
   hooks: string[];
   services: string[];
   apiRoutes: string[];
-  stats: { totalFiles: number; totalChunks: number };
+  stats: { files: number; components: number; functions: number };
 }
 
-// ── Chat ─────────────────────────────────────────────────────────────────────
+export type RepositorySummary = RepoSummary; // alias for list endpoint
+
 export type ChatMode = "chat" | "overview" | "flow" | "diagram";
 
 export interface ChatMessage {
@@ -264,11 +227,11 @@ export interface ChatMessage {
 
 export interface ChatResponse {
   answer: string;
-  mode: ChatMode;
-  chunksUsed: number;
+  mode?: ChatMode;
+  chunksUsed?: number;
+  sources?: Array<{ filePath: string; symbolName: string; score: number }>;
 }
 
-// ── React Flow ────────────────────────────────────────────────────────────────
 export type GraphNodeType = "page" | "component" | "hook" | "service" | "apiRoute";
 
 export interface GraphNodeData {
@@ -282,556 +245,333 @@ export interface GraphNodeData {
 
 ## 6. Axios API Client
 
-`src/lib/api.ts` — complete implementation:
+`src/lib/api.ts`:
 
 ```typescript
 import axios from "axios";
-import type { ApiResponse, IndexedRepository, RepoSummary, ChatMode, ChatResponse } from "@/types";
 
 const client = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api/v1",
   headers: { "Content-Type": "application/json" },
-  timeout: 120_000, // indexing can take up to 2 minutes
+  timeout: 120_000,
 });
 
 export const api = {
-  // Index a new repository
   indexRepository: (repoUrl: string, branch?: string) =>
-    client.post<ApiResponse<IndexedRepository>>("/repo/analyze", { repoUrl, branch }),
+    client.post("/repos/analyze", { repoUrl, branch }),
 
-  // Get the summary JSON for React Flow canvas
   getRepoSummary: (namespace: string) =>
-    client.get<ApiResponse<RepoSummary>>(`/repo/${namespace}/summary`),
+    client.get(`/repos/${namespace}/summary`),
 
-  // Send a chat message
+  getCommitSummary: (namespace: string) =>
+    client.get(`/repos/${namespace}/commits/summary`),
+
   chat: (namespace: string, query: string, mode: ChatMode) =>
-    client.post<ApiResponse<ChatResponse>>(`/repo/${namespace}/chat`, { query, mode }),
+    client.post(`/repos/${namespace}/chat`, { query, mode }),
 };
 ```
 
-Add `NEXT_PUBLIC_API_URL=http://localhost:5000/api/v1` to `.env.local`.
+SSE streams (indexing progress) are opened directly with the native `fetch()` API in `RepoIndexForm` — Axios does not support streaming responses.
 
 ---
 
-## 7. Zustand Store — Complete Design
+## 7. Zustand Stores — Split Design
 
-Expand the existing `src/store/use-app-store.ts`. The current store only has `activeRepoId`, `isSidebarOpen`, and basic chat history. Replace it with the full store:
+The store is split into three focused files instead of one monolithic store. This keeps each concern isolated and avoids unnecessary re-renders.
+
+### `repo-store.ts` — persisted to localStorage
 
 ```typescript
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import type { ChatMessage, ChatMode, IndexedRepository, RepoSummary } from "@/types";
-
-interface AppState {
-  // ── Active Repository ──────────────────────────────────────────────────────
+interface RepoState {
   activeRepo: IndexedRepository | null;
   repoSummary: RepoSummary | null;
   isIndexing: boolean;
+  repoHistory: IndexedRepository[];   // last 20 indexed repos
 
-  // ── Chat ───────────────────────────────────────────────────────────────────
+  setActiveRepo, setRepoSummary, setIndexing,
+  addToHistory, removeFromHistory, clearRepo
+}
+```
+
+`activeRepo` and `repoHistory` are persisted via Zustand's `persist` middleware (key: `codeatlas-repo-store`). When the user refreshes, their active repo reconnects automatically without re-indexing.
+
+### `chat-store.ts` — not persisted (resets on refresh)
+
+```typescript
+interface ChatState {
   messages: ChatMessage[];
-  isStreaming: boolean;       // LLM is generating a response
+  isStreaming: boolean;
   activeMode: ChatMode;
 
-  // ── UI ────────────────────────────────────────────────────────────────────
-  isSidebarOpen: boolean;
-  activeView: "chat" | "canvas"; // toggle between chat and React Flow canvas
-
-  // ── Actions ───────────────────────────────────────────────────────────────
-  setActiveRepo: (repo: IndexedRepository) => void;
-  setRepoSummary: (summary: RepoSummary) => void;
-  setIndexing: (v: boolean) => void;
-  clearRepo: () => void;
-
-  addMessage: (msg: Omit<ChatMessage, "id" | "timestamp">) => void;
-  clearMessages: () => void;
-  setStreaming: (v: boolean) => void;
-  setMode: (mode: ChatMode) => void;
-
-  setSidebarOpen: (v: boolean) => void;
-  setActiveView: (view: "chat" | "canvas") => void;
+  addMessage, clearMessages, setStreaming, setMode
 }
-
-export const useAppStore = create<AppState>()(
-  persist(
-    (set) => ({
-      activeRepo: null,
-      repoSummary: null,
-      isIndexing: false,
-      messages: [],
-      isStreaming: false,
-      activeMode: "chat",
-      isSidebarOpen: true,
-      activeView: "chat",
-
-      setActiveRepo: (repo) => set({ activeRepo: repo }),
-      setRepoSummary: (summary) => set({ repoSummary: summary }),
-      setIndexing: (v) => set({ isIndexing: v }),
-      clearRepo: () => set({ activeRepo: null, repoSummary: null, messages: [] }),
-
-      addMessage: (msg) =>
-        set((state) => ({
-          messages: [
-            ...state.messages,
-            { ...msg, id: crypto.randomUUID(), timestamp: new Date() },
-          ],
-        })),
-      clearMessages: () => set({ messages: [] }),
-      setStreaming: (v) => set({ isStreaming: v }),
-      setMode: (mode) => set({ activeMode: mode }),
-
-      setSidebarOpen: (v) => set({ isSidebarOpen: v }),
-      setActiveView: (view) => set({ activeView: view }),
-    }),
-    {
-      name: "codeatlas-store",
-      // Only persist the active repo so user doesn't lose context on refresh
-      partialize: (state) => ({ activeRepo: state.activeRepo }),
-    }
-  )
-);
 ```
 
-**Why `persist` middleware?** When a user refreshes the page, the `activeRepo` (with its `namespace`) survives. Without this, they'd have to re-index the repo on every page load.
+Chat history intentionally resets on refresh — keeping stale conversations across sessions causes confusion.
 
-**How to use in components:**
+### `ui-store.ts` — not persisted
+
 ```typescript
-// Read
-const { activeRepo, messages, activeMode } = useAppStore();
+interface UiState {
+  isSidebarOpen: boolean;
+  activeView: 'chat' | 'canvas';
 
-// Write
-const { addMessage, setMode, setStreaming } = useAppStore();
-setMode("flow");
-addMessage({ role: "user", content: "How does auth work?", mode: "flow" });
+  setSidebarOpen, setActiveView
+}
 ```
+
+**Why split?** A single store means every component that reads any field re-renders when any field changes. With three stores, a component that only reads `activeView` won't re-render when a new chat message arrives.
 
 ---
 
 ## 8. Pages & Routing
 
-### Route: `/` — Landing Page
-Already built. The `Analyze repository` button links to `/analyze`.
+### `/` — Landing Page
+Hero section with animated interactive dashboard preview, feature cards, how-it-works stepper, footer. Navbar links: Features (anchor), Docs (→ GitHub architecture guide), GitHub (→ repo), Get Started (→ `/analyze`).
 
-### Route: `/analyze` — Repository Indexer
-A single-purpose page with the `RepoIndexForm`. After successful indexing:
-1. Store the result in Zustand: `setActiveRepo(data)`
-2. Navigate to `/{namespace}/chat`
+### `/analyze` — Repository Indexer
+Single-purpose page with `RepoIndexForm`. Two tabs: GitHub URL and ZIP upload. After successful indexing, stores result in `repo-store` and navigates to `/{namespace}/chat`.
 
-```typescript
-// app/analyze/page.tsx
-"use client";
-import { RepoIndexForm } from "@/components/repository/RepoIndexForm";
-
-export default function AnalyzePage() {
-  return (
-    <div className="min-h-screen bg-[#0C0A09] flex items-center justify-center">
-      <RepoIndexForm />
-    </div>
-  );
-}
-```
-
-### Route: `/[namespace]/chat` — Main App
-The core application shell. The `namespace` in the URL IS the Pinecone namespace. This means users can bookmark or share a URL to a specific indexed repo.
-
-```typescript
-// app/[namespace]/chat/page.tsx
-import { AppShell } from "@/layout/AppShell";
-
-export default function ChatPage({ params }: { params: { namespace: string } }) {
-  return <AppShell namespace={params.namespace} />;
-}
-```
-
-`AppShell` renders:
-- `ChatSidebar` on the left
-- `ChatWindow` or `CodebaseGraph` on the right (based on `activeView`)
+### `/[namespace]/chat` — Main App
+The `namespace` URL param IS the Pinecone namespace (UUID). Users can bookmark this URL to return to any indexed repo. `AppShell` renders `ChatSidebar` + either `ChatWindow` or `CodebaseGraph` based on `activeView`.
 
 ---
 
-## 9. The Chat Interface — 4 Mode Rendering
+## 9. Repository Indexing — GitHub + ZIP
 
-### ChatInput with Mode Selector
-The input bar at the bottom has a mode toggle. Map modes to readable labels:
+`src/components/repository/RepoIndexForm.tsx`
 
-```typescript
-const MODE_CONFIG: Record<ChatMode, { label: string; description: string; icon: LucideIcon }> = {
-  chat:     { label: "Chat",     description: "Q&A about the codebase",       icon: MessageSquare },
-  overview: { label: "Overview", description: "Full architecture report",      icon: LayoutDashboard },
-  flow:     { label: "Flow",     description: "Trace execution paths",         icon: GitBranch },
-  diagram:  { label: "Diagram",  description: "Generate architecture diagram", icon: Share2 },
-};
+Two input modes on a tab toggle:
+
+**GitHub URL tab:**
+- `react-hook-form` + Zod validate the URL (`github.com` required)
+- Optional branch field (defaults to `main`)
+- Submits to `POST /repos/analyze/stream` via native `fetch()`
+
+**ZIP Upload tab:**
+- Drag-and-drop zone + click-to-browse
+- Accepts `.zip` only, max 200 MB enforced by backend
+- Submits to `POST /repos/upload/stream` via `FormData`
+
+**SSE Progress UI:**
+Both paths share the same progress renderer. Steps defined:
+```
+clone → scan → chunk → embed → upsert → summary
 ```
 
-### ChatMessage Rendering Strategy
+Each step shows: icon (idle / spinner / check), label, detail text, and percentage. The overall progress bar animates via the `pct` field from the SSE stream.
 
-Each `ChatMessage` component checks the mode and renders differently:
+```typescript
+// SSE reader — shared by both GitHub and ZIP submit handlers
+async function readSSEStream(res, onProgress, onDone, onError) {
+  const reader = res.body.getReader();
+  // reads event: / data: pairs, parses JSON, dispatches to handlers
+}
+```
 
-| Mode | Rendering |
+On `done` event: stores repo in `repo-store`, adds to history, redirects to `/{namespace}/chat` after 600ms.
+
+---
+
+## 10. The Chat Interface — 4 Mode Rendering
+
+### ChatMessage — Rendering Strategy
+
+`src/components/chat/ChatMessage.tsx` uses `react-markdown` with custom component overrides:
+
+| Element | Rendering |
 |---|---|
-| `chat` | `react-markdown` + `react-syntax-highlighter` code blocks |
-| `overview` | Same as `chat` but full-width, no max-width cap on the bubble |
-| `flow` | `react-markdown` — the LLM naturally uses `→` arrows and numbered steps |
-| `diagram` | `react-markdown` with a custom `code` component that intercepts ` ```mermaid ``` ` blocks |
+| `h1`–`h4` | Custom sizes: `text-base` → `text-[13px]`, color `#e3e2de` → `#b5cdac` |
+| `p`, `ul`, `ol` | `text-[14px] text-[#d4ddc8]` — bright enough to read on dark background |
+| `strong` | `text-[#e3e2de]` |
+| `code` (inline) | `bg-white/[0.06] text-[#CCD67F]` |
+| `code` (block) | `SyntaxHighlighter` with `oneDark` theme |
+| `code` (mermaid) | Intercepted → `<MermaidRenderer>` renders SVG inline |
+| `blockquote` | Left border `#CCD67F/40`, muted italic |
 
-### ChatMessage Component Structure
+User messages render as a simple bubble: `bg-white/[0.06] border border-white/[0.08]`.
 
-```tsx
-// src/components/chat/ChatMessage.tsx
-import ReactMarkdown from "react-markdown";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
-import MermaidRenderer from "@/components/diagrams/MermaidRenderer";
-import type { ChatMessage as ChatMessageType } from "@/types";
+Overview mode messages remove the `max-w` cap and go full-width for the architecture report.
 
-export function ChatMessage({ message }: { message: ChatMessageType }) {
-  if (message.role === "user") {
-    return (
-      <div className="flex justify-end">
-        <div className="max-w-[80%] rounded-2xl bg-[#1C1917] border border-[#8A5F41]/30 px-4 py-3 text-sm text-[#F3E4C9]">
-          {message.content}
-        </div>
-      </div>
-    );
-  }
+### Mode Selector
 
-  return (
-    <div className="flex justify-start">
-      <div className={`${message.mode === "overview" ? "w-full" : "max-w-[90%]"} prose prose-invert prose-sm`}>
-        <ReactMarkdown
-          components={{
-            code({ className, children }) {
-              const language = /language-(\w+)/.exec(className ?? "")?.[1];
+Four modes map to icons and descriptions:
+- `chat` → MessageSquare — "Q&A about the codebase"
+- `overview` → LayoutDashboard — "Full architecture report"
+- `flow` → GitBranch — "Trace execution paths"
+- `diagram` → Share2 — "Generate architecture diagram"
 
-              // Intercept mermaid blocks and render as diagram
-              if (language === "mermaid") {
-                return <MermaidRenderer chart={String(children)} />;
-              }
-
-              return (
-                <SyntaxHighlighter style={oneDark} language={language ?? "text"} PreTag="div">
-                  {String(children).replace(/\n$/, "")}
-                </SyntaxHighlighter>
-              );
-            },
-          }}
-        >
-          {message.content}
-        </ReactMarkdown>
-      </div>
-    </div>
-  );
-}
-```
-
-### Sending a Chat Message (Full Flow)
+### Chat Flow
 
 ```typescript
-// Inside ChatInput.tsx or the page
-async function handleSubmit(query: string) {
-  const { activeRepo, activeMode, addMessage, setStreaming } = useAppStore.getState();
-  if (!activeRepo) return;
-
-  // 1. Add user message immediately
-  addMessage({ role: "user", content: query, mode: activeMode });
-  setStreaming(true);
-
-  try {
-    const { data } = await api.chat(activeRepo.namespace, query, activeMode);
-    // 2. Add assistant message
-    addMessage({
-      role: "assistant",
-      content: data.data.answer,
-      mode: data.data.mode,
-      chunksUsed: data.data.chunksUsed,
-    });
-  } catch (err) {
-    toast.error("Failed to get a response. Please try again.");
-  } finally {
-    setStreaming(false);
-  }
-}
+// ChatInput submits:
+addMessage({ role: "user", content: query });
+setStreaming(true);
+const { data } = await api.chat(namespace, query, activeMode);
+addMessage({ role: "assistant", content: data.data.answer });
+setStreaming(false);
 ```
+
+Streaming indicator shows three bouncing dots + "Analyzing codebase…" while waiting.
 
 ---
 
-## 10. Mermaid.js Renderer
+## 11. Commit Summary Feature
+
+**Button location:** ChatSidebar → "Actions" section, below the Indexing stats.
+
+**Behavior:**
+1. User clicks "Commit Summary"
+2. `setActiveView("chat")` — switches to chat view so the response is visible
+3. `GET /repos/:namespace/commits/summary` is called
+4. LLM response injected as an assistant message via `addMessage`
+5. Button shows "Loading..." while in flight, disabled to prevent double-clicks
+6. On error (404 = ZIP upload, no commits): injects a fallback message
+
+**What the response looks like:**
+```markdown
+## Recent Development Summary
+
+**Features:**
+- Added image optimization and format conversion
+- Implemented ZIP upload support
+
+**Fixes:**
+- Fixed JWT token expiry handling
+- Resolved Cloudinary upload race condition
+
+**Refactors:**
+- Cleaned up auth middleware
+- Split Zustand store into focused slices
+```
+
+**Only works for GitHub-cloned repos.** ZIP uploads have no git history — the backend returns a 404 which the frontend handles gracefully.
+
+---
+
+## 12. Mermaid.js Renderer
 
 `src/components/diagrams/MermaidRenderer.tsx`
 
-The `diagram` mode returns a markdown response containing:
-````
-```mermaid
-graph TD
-  A[ImageCompressor] --> B[handleCompress]
-  B --> C[/api/image-compress]
-```
-````
-
-The `ChatMessage` component's custom `code` renderer passes the content to this component:
+The `diagram` chat mode returns a response containing a ` ```mermaid ``` ` code block. The `ChatMessage` component's custom `code` renderer passes that content here:
 
 ```tsx
 "use client";
-import { useEffect, useRef, useId } from "react";
 import mermaid from "mermaid";
 
-mermaid.initialize({
-  startOnLoad: false,
-  theme: "dark",
-  themeVariables: {
-    background: "#0C0A09",
-    primaryColor: "#1C1917",
-    primaryTextColor: "#F3E4C9",
-    primaryBorderColor: "#8A5F41",
-    lineColor: "#CCD67F",
-  },
-});
+mermaid.initialize({ startOnLoad: false, theme: "dark" });
 
 export default function MermaidRenderer({ chart }: { chart: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const id = useId().replace(/:/g, ""); // mermaid IDs can't have colons
 
   useEffect(() => {
-    if (!containerRef.current || !chart) return;
-
     mermaid
-      .render(`mermaid-${id}`, chart)
-      .then(({ svg }) => {
-        if (containerRef.current) {
-          containerRef.current.innerHTML = svg;
-        }
-      })
-      .catch(() => {
-        // If mermaid fails to parse, show raw text
-        if (containerRef.current) {
-          containerRef.current.innerHTML = `<pre>${chart}</pre>`;
-        }
-      });
-  }, [chart, id]);
+      .render(`mermaid-${uniqueId}`, chart)
+      .then(({ svg }) => { containerRef.current.innerHTML = svg; })
+      .catch(() => { containerRef.current.innerHTML = `<pre>${chart}</pre>`; });
+  }, [chart]);
 
-  return (
-    <div
-      ref={containerRef}
-      className="overflow-x-auto rounded-xl border border-[#8A5F41]/20 bg-[#121110] p-4 my-4"
-    />
-  );
+  return <div ref={containerRef} className="overflow-x-auto rounded-xl ..." />;
 }
 ```
 
-**Important:** `mermaid` must only run in the browser. The `"use client"` directive handles this. Do not import mermaid in any server component.
+**Must be `"use client"`** — Mermaid uses browser DOM APIs, cannot run server-side.
 
 ---
 
-## 11. React Flow — Codebase Graph Canvas
+## 13. React Flow — Codebase Graph Canvas
 
 `src/components/diagrams/CodebaseGraph.tsx`
 
-The canvas view is triggered when the user clicks the "Canvas" button in the sidebar (`setActiveView("canvas")`). It fetches `repoSummary` and maps it into React Flow nodes.
-
-### Node Layout Strategy
-
-Use a column-based layout to prevent all nodes from spawning at position `(0,0)`:
+Activated when `activeView === "canvas"`. The `repoSummary` JSON (fetched on chat page load) is mapped into React Flow nodes in a column layout:
 
 ```
-Column 0 (x=0):     Pages
-Column 1 (x=300):   Components
-Column 2 (x=600):   Hooks
-Column 3 (x=900):   Services
-Column 4 (x=1200):  API Routes
+Pages       x=0      yellow-green border
+Components  x=300    amber border
+Hooks       x=600    muted border
+Services    x=900    cream border
+API Routes  x=1200   yellow-green border
 ```
 
-### Node Color Scheme (matches brand palette)
+Each category stacks vertically (`y = index × 80`). Node label = filename extracted from the full path.
 
-| Type | Background | Border |
-|---|---|---|
-| `page` | `#1C1917` | `#CCD67F` |
-| `component` | `#1C1917` | `#8A5F41` |
-| `hook` | `#1C1917` | `#A77F60` |
-| `service` | `#1C1917` | `#F3E4C9` |
-| `apiRoute` | `#1C1917` | `#CCD67F` |
-
-### Full Implementation
-
-```tsx
-"use client";
-import ReactFlow, {
-  Background,
-  Controls,
-  MiniMap,
-  type Node,
-  type Edge,
-  BackgroundVariant,
-} from "reactflow";
-import "reactflow/dist/style.css";
-import type { RepoSummary, GraphNodeType } from "@/types";
-
-const COLUMN_X: Record<GraphNodeType, number> = {
-  page: 0,
-  component: 300,
-  hook: 600,
-  service: 900,
-  apiRoute: 1200,
-};
-
-const NODE_STYLES: Record<GraphNodeType, React.CSSProperties> = {
-  page:     { background: "#1C1917", border: "1px solid #CCD67F", color: "#F3E4C9", borderRadius: 8, fontSize: 11, padding: "6px 12px" },
-  component:{ background: "#1C1917", border: "1px solid #8A5F41", color: "#F3E4C9", borderRadius: 8, fontSize: 11, padding: "6px 12px" },
-  hook:     { background: "#1C1917", border: "1px solid #A77F60", color: "#F3E4C9", borderRadius: 8, fontSize: 11, padding: "6px 12px" },
-  service:  { background: "#1C1917", border: "1px solid #F3E4C9", color: "#F3E4C9", borderRadius: 8, fontSize: 11, padding: "6px 12px" },
-  apiRoute: { background: "#1C1917", border: "1px solid #CCD67F", color: "#CCD67F", borderRadius: 8, fontSize: 11, padding: "6px 12px" },
-};
-
-function buildNodes(summary: RepoSummary): Node[] {
-  const nodes: Node[] = [];
-  const entries: [GraphNodeType, string[]][] = [
-    ["page",     summary.pages],
-    ["component",summary.components],
-    ["hook",     summary.hooks],
-    ["service",  summary.services],
-    ["apiRoute", summary.apiRoutes],
-  ];
-
-  for (const [type, paths] of entries) {
-    paths.forEach((filePath, i) => {
-      const label = filePath.split("/").pop() ?? filePath;
-      nodes.push({
-        id: `${type}-${i}`,
-        data: { label },
-        position: { x: COLUMN_X[type], y: i * 80 },
-        style: NODE_STYLES[type],
-      });
-    });
-  }
-
-  return nodes;
-}
-
-export default function CodebaseGraph({ summary }: { summary: RepoSummary }) {
-  const nodes = buildNodes(summary);
-  const edges: Edge[] = []; // Edges can be added later using imports[] metadata
-
-  return (
-    <div className="h-full w-full bg-[#0C0A09]">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        fitView
-        proOptions={{ hideAttribution: true }}
-      >
-        <Background variant={BackgroundVariant.Dots} color="#2C2825" gap={24} size={1} />
-        <Controls className="bg-[#1C1917] border-[#8A5F41]/30" />
-        <MiniMap
-          nodeColor={(n) => {
-            const type = n.id.split("-")[0] as GraphNodeType;
-            return NODE_STYLES[type]?.border?.toString().replace("1px solid ", "") ?? "#8A5F41";
-          }}
-          style={{ background: "#121110", border: "1px solid #2C2825" }}
-        />
-      </ReactFlow>
-    </div>
-  );
-}
-```
-
-**Future enhancement**: Use the `imports[]` and `componentDependencies[]` fields from the Pinecone metadata (available in the summary) to draw edges between nodes — showing which components depend on which.
+No edges are drawn currently — edges would require cross-referencing `imports[]` and `componentDependencies[]` from Pinecone metadata, which is a future enhancement.
 
 ---
 
-## 12. UI Design System
+## 14. Chat Sidebar
 
-The landing page has established the design language. Carry it into all new pages.
+`src/layout/ChatSidebar.tsx`
+
+Sections top to bottom:
+
+1. **Brand** — "CodeAtlas" wordmark
+2. **Repo card** — repo name + owner, `FolderGit2` icon
+3. **Views** section — Chat and Codebase Canvas toggle buttons
+4. **Indexing** section — Scanned Files and Indexed Chunks stats
+5. **Actions** section — "Commit Summary" button
+6. **Footer** — "Clear Context" button (clears repo + messages, redirects to `/analyze`)
+
+The sidebar is hidden on mobile (`hidden md:flex`).
+
+**Commit Summary button** calls `handleCommitSummary()` which:
+- Sets `activeView` to `"chat"` (so the injected message is visible)
+- Calls `api.getCommitSummary(namespace)`
+- Injects the LLM answer as an assistant `ChatMessage`
+
+---
+
+## 15. UI Design System
 
 ### Color Tokens
 
 ```
-Background:   #0C0A09  (near black)
-Surface:      #1C1917  (dark brown-black)
-Border:       #8A5F41  (muted amber)
-Text Primary: #F3E4C9  (warm cream)
-Text Muted:   #A77F60  (muted amber)
-Accent:       #CCD67F  (yellow-green)
+Background:    #0c0c0b  (near black)
+Surface:       #0a0a0a / white/[0.03]
+Border:        white/[0.04] – white/[0.08]
+Text Primary:  #e3e2de  (warm off-white)
+Text Muted:    #8e9289 / #6b6e66
+Text Faint:    #4a4d46
+Accent:        #CCD67F  (yellow-green — buttons, active states, icons)
+Accent Alt:    #98b090  (muted green — done states, secondary)
 ```
 
 ### Typography
-- Display headings: `font-[family-name:var(--font-display)]` (Outfit)
-- Body: `font-sans` (Geist)
-- Code/mono: `font-mono` (Geist Mono)
+- Display headings: `font-[family-name:var(--font-display)]`
+- Body / UI: `font-[family-name:var(--font-inter)]`
+- Mono: `font-mono`
 
-### Common Patterns from Landing (reuse these)
+### Common Patterns
 
-**Glass card:**
+**Sidebar nav button (active):**
 ```
-bg-[#1C1917]/40 backdrop-blur-xl border border-[#8A5F41]/20 rounded-2xl
-```
-
-**Pill badge:**
-```
-font-mono text-[11px] uppercase tracking-widest text-[#A77F60] border border-[#8A5F41]/30 rounded-full px-3 py-1
+bg-white/[0.05] text-[#CCD67F] border border-white/[0.06] rounded-lg
 ```
 
-**Primary button (already in `<Button>`):**
+**Sidebar nav button (inactive):**
 ```
-bg-[#CCD67F] text-[#0C0A09] rounded-full hover:bg-[#CCD67F]/90
-```
-
-**Input field:**
-```
-bg-[#121110] border-[#8A5F41]/30 text-[#F3E4C9] placeholder:text-[#A77F60]/50
-focus:border-[#CCD67F]/50 focus:ring-0
+text-[#8e9289] hover:text-[#e3e2de] hover:bg-white/[0.03] border border-transparent
 ```
 
-### Chat Bubble Styles
-
+**Stat row:**
 ```
-User:      bg-[#1C1917] border border-[#8A5F41]/30 rounded-2xl rounded-br-sm
-Assistant: no background, full-width prose content
+bg-white/[0.02] border border-white/[0.04] rounded-lg
 ```
 
----
+**Input fields:**
+```
+bg-white/5 border-white/10 text-[#e3e2de] placeholder:text-[#8e9289]
+focus-visible:ring-[#98b090]/50
+```
 
-## 13. Component Build Order
+**Primary button:**
+```
+bg-[#98b090] text-[#0a0a0a] hover:bg-[#b5cdac] rounded-xl font-semibold
+```
 
-Build in this order to avoid dependency issues:
+**Chat user bubble:**
+```
+bg-white/[0.06] border border-white/[0.08] rounded-2xl rounded-tr-md
+```
 
-**Phase 1 — Foundation**
-1. `src/types/index.ts` — all interfaces
-2. `src/lib/api.ts` — axios client
-3. `src/store/use-app-store.ts` — expand Zustand store
-
-**Phase 2 — Repository Indexing**
-4. `src/components/repository/RepoIndexForm.tsx` — URL form with react-hook-form + zod
-5. `src/app/analyze/page.tsx` — analyze page using the form
-
-**Phase 3 — Chat UI**
-6. `src/components/diagrams/MermaidRenderer.tsx` — needed by ChatMessage
-7. `src/components/chat/ChatMessage.tsx` — markdown + mermaid aware
-8. `src/components/chat/ModeSelector.tsx` — 4 mode tabs
-9. `src/components/chat/ChatInput.tsx` — input bar
-10. `src/components/chat/ChatWindow.tsx` — scrollable message list
-
-**Phase 4 — Layout**
-11. `src/layout/ChatSidebar.tsx` — repo info, mode, view toggle, clear
-12. `src/layout/AppShell.tsx` — sidebar + main content area
-
-**Phase 5 — Canvas**
-13. `src/components/diagrams/CodebaseGraph.tsx` — React Flow canvas
-14. Wire canvas into `AppShell` behind the `activeView === "canvas"` toggle
-
-**Phase 6 — Route**
-15. `src/app/[namespace]/chat/page.tsx` — final chat page
-
----
-
-## Key Implementation Notes
-
-**`reactflow` requires `"use client"`** — it uses browser APIs. Never render it in a server component.
-
-**`mermaid` requires `"use client"`** — same reason. Import it only inside client components.
-
-**The `namespace` is the Pinecone namespace** — it equals `repoId`. It's a UUID like `b45c9245-f22e-4755-b1a8-c9903f3f041b`. Store it from the index response and use it in every chat call.
-
-**The `overview` mode bypasses vector search** — it reads from `summary.json` on disk. It's fast (< 1s). Use it to power the initial repo summary card in the sidebar.
-
-**Indexing takes 30 seconds to 3 minutes** depending on repo size. Show a proper loading state with progress messaging. The API will not respond until fully done — it's not a streaming endpoint.
-
-**The chat API response time** is 2–8 seconds (embedding + Pinecone query + Groq inference). Show a typing indicator (`isStreaming` in Zustand) while waiting.
+**Chat assistant text:** `text-[#d4ddc8]` — bright enough to read clearly on `#0a0a0a` background

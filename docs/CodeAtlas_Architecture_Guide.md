@@ -103,9 +103,11 @@ Code → AST Parser → Extract COMPLETE functions/classes/components
 | **Pinecone Serverless** | Vector database | Stores embeddings + metadata. Supports `$in` metadata filter — critical for our multi-hop algorithm |
 | **Groq + Llama-3.3-70b** | LLM for generating answers | 10–20× faster than GPT-4 because Groq uses custom LPU hardware. Free tier is generous |
 | **LangChain (`@langchain/groq`)** | LLM abstraction | Provides clean `SystemMessage` + `HumanMessage` format for Groq. Only used here — not for embeddings or Pinecone |
-| **simple-git** | Git operations | Programmatic shallow clone (`--depth 1`) — downloads only the latest code, not the entire git history |
+| **simple-git** | Git operations | Depth-50 clone (`--depth 50`) — downloads the latest 50 commits so commit history is available for the commit summary feature |
 | **Zod** | Request validation | Runtime type checking for API inputs. Throws structured error messages, not crashes |
 | **rimraf** | Disk cleanup | Deletes cloned repo after indexing. Without this, the server disk fills up fast |
+| **unzipper** | ZIP extraction | Extracts uploaded `.zip` archives into `tmp/repos/` for local project upload support |
+| **multer** | File upload middleware | Handles `multipart/form-data` ZIP file uploads — validates type and enforces 200 MB size limit |
 
 ### Frontend
 
@@ -186,13 +188,14 @@ Regex breaks the moment code doesn't match the exact pattern. AST handles all of
 Here's the complete journey from when a user submits a GitHub URL to when the data is ready to query:
 
 ```
-User submits GitHub URL
-         ↓
-POST /api/v1/repos/analyze
-         ↓
+User submits GitHub URL  ——OR——  User uploads ZIP file
+         ↓                                ↓
+POST /repos/analyze/stream      POST /repos/upload/stream
+         ↓                                ↓
 [STEP 1]  Validate URL → Generate repoId (UUID) → this becomes Pinecone namespace
          ↓
-[STEP 2]  simple-git → shallow clone into tmp/repos/{repoId}/
+[STEP 2]  GitHub: simple-git depth-50 clone into tmp/repos/{repoId}/
+          ZIP:    unzipper extracts into tmp/repos/{repoId}/, strips wrapper folder
          ↓
 [STEP 3]  Walk directory tree → skip junk files → collect source files
          ↓
@@ -214,24 +217,36 @@ POST /api/v1/repos/analyze
           → Each record: { id, vector, metadata }
           → All stored in namespace = repoId
          ↓
-[STEP 9]  Build summary.json and save to disk
+[STEP 8]  Build summary.json and save to disk
          ↓
-[STEP 10] rimraf → delete tmp/repos/{repoId}/
+[STEP 9]  Capture git commits (GitHub only) — reads last 20 from local .git while repo is on disk
          ↓
-Return success response to frontend
+[STEP 10] rimraf → delete tmp/repos/{repoId}/  (ZIP flow also deletes the uploaded .zip)
+         ↓
+SSE "done" event → frontend receives full IndexedRepository payload
 ```
 
 **Concurrency note:** Files are processed 10 at a time (not one by one). This makes indexing significantly faster for large repos.
 
+**SSE streaming:** Both `/analyze/stream` and `/upload/stream` use Server-Sent Events — progress events (`step`, `label`, `detail`, `pct`) stream in real-time until a final `done` or `error` event.
+
 ---
 
-### 5.1 Step 1 — Repository Intake (Clone)
+### 5.1 Step 1 — Repository Intake
 
-**File:** `src/services/repository.service.ts`
+**Files:** `src/services/repository.service.ts`, `src/services/zip.service.ts`
 
-- URL is validated: must be `github.com` format with owner + repo name
-- `crypto.randomUUID()` generates a unique `repoId` — this UUID becomes the **Pinecone namespace** that isolates this repo from all others forever
-- `simple-git` runs a **shallow clone** (`--depth 1`) — downloads only the latest snapshot, not the full git history. A 500MB repo might download as only 50MB this way
+**GitHub path:**
+- URL validated: must be `github.com` with owner + repo name
+- `crypto.randomUUID()` generates `repoId` → becomes the Pinecone namespace
+- `simple-git` clones with `--depth 50` — captures last 50 commits for the commit summary feature. A 500MB repo downloads as roughly 10–50MB
+
+**ZIP path:**
+- `multer` stores the uploaded `.zip` to `tmp/uploads/`
+- `unzipper` extracts to `tmp/repos/{repoId}/`
+- If the ZIP has a single top-level wrapper folder (common with GitHub ZIP downloads like `repo-main/`), the inner folder is used as `localPath` directly
+- `owner` is set to `"local"` — no GitHub metadata available
+- No commit history available — `summary.commits` stays `undefined`
 
 ---
 
@@ -342,22 +357,30 @@ Records are upserted in batches of 100 with 5 concurrent workers.
 
 ---
 
-### 5.8 Step 8 — Summary Generation
+### 5.8 Step 8 — Summary Generation + Commit Capture
 
-A lightweight `summary.json` file is built and saved to disk. It categorizes the project:
+**File:** `src/services/indexing.service.ts`
+
+A `summary.json` is built and saved to `data/summaries/{namespace}.json`:
 - Files in `app/**/page.tsx` → **pages**
 - Files in `components/` → **components**
 - Files in `hooks/` or symbols starting with `use` → **hooks**
 - Files in `services/` → **services**
 - Files in `api/` or `routes/` → **API routes**
 
-This summary is only used by the `overview` query mode (no vector search needed there).
+**Commit capture (GitHub only):** While the repo is still on disk, `simpleGit(localPath).log({ maxCount: 20 })` reads up to 20 commits. Because clone used `--depth 50`, up to 50 commits of history are present. Each commit is stored as:
+```json
+{ "hash": "a1b2c3d", "message": "feat: add auth", "author": "Jane", "date": "2024-01-15" }
+```
+Runs in a `try/catch` — ZIP uploads have no `.git` folder, error is silently swallowed, `commits` stays `undefined`.
 
 ---
 
 ### 5.9 Step 9 — Cleanup
 
-`rimraf` deletes `tmp/repos/{repoId}/` — the cloned repo folder. This runs inside a `try/finally` block, so even if indexing fails halfway through, the disk is still cleaned up.
+`rimraf` deletes `tmp/repos/{repoId}/` inside a `try/finally` — runs even if indexing fails.
+
+For ZIP uploads, the original `.zip` in `tmp/uploads/` is also deleted with `fs.unlink(zipPath)`.
 
 ---
 
@@ -673,6 +696,31 @@ LLM generates: Purpose, Technologies, Features, Architecture, Pages, Components,
     ↓
 Return: { answer: "## Repository Overview...", sources: [] }
 ```
+
+---
+
+### Commit Summary (sidebar action — not a chat mode)
+
+**Endpoint:** `GET /api/v1/repos/:namespace/commits/summary`
+
+**Flow:**
+```
+User clicks "Commit Summary" in sidebar
+    ↓
+Load data/summaries/{namespace}.json
+    ↓
+Read summary.commits (throws 404 if absent — ZIP upload)
+    ↓
+Format: "a1b2c3d 2024-01-15 Jane: feat: add auth"
+    ↓
+Send to Groq: group commits by theme (features / fixes / refactors)
+    ↓
+Return: { answer: "## Recent Development Summary...", commits: [...] }
+    ↓
+Frontend injects answer as assistant message + auto-switches to chat view
+```
+
+**Why not a chat mode?** Commit history is repo metadata, not codebase content. No vector search needed — it's a one-shot sidebar action.
 
 **Why skip vector search?** For a global overview you need the *complete picture* — not just the 10 most similar fragments. The summary JSON is under 2KB and captures the entire project structure. Vector search would give an incomplete, biased view.
 
@@ -1082,14 +1130,15 @@ backend/src/
 │
 ├── routes/
 │   ├── chat.routes.ts             ← POST /api/v1/repos/:namespace/chat
-│   ├── indexing.routes.ts         ← POST /api/v1/repos/analyze
-│   └── repository.routes.ts       ← GET  /api/v1/repos/:namespace/summary
+│   ├── indexing.routes.ts         ← POST /api/v1/repos/analyze (non-streaming)
+│   └── repository.routes.ts       ← GET /summary, GET /commits/summary, POST /analyze/stream, POST /upload/stream
 │
 ├── services/
 │   ├── chat.service.ts            ← orchestrates: validate → retrieve → generate
-│   ├── indexing.service.ts        ← orchestrates: scan → chunk → embed → upsert → summary
-│   ├── repository.service.ts      ← git clone, metadata, cleanup
-│   └── summary.service.ts         ← read/write summary.json
+│   ├── indexing.service.ts        ← scan → chunk → embed → upsert → git log → summary
+│   ├── repository.service.ts      ← git clone (--depth 50), SSE progress, cleanup
+│   ├── summary.service.ts         ← read/write summary.json
+│   └── zip.service.ts             ← ZIP extract, build metadata, call indexing, cleanup
 │
 ├── types/
 │   └── index.ts                   ← all TypeScript interfaces
