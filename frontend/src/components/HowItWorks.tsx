@@ -61,14 +61,14 @@ const Typewriter = ({ text, isActive, isInView = true }: { text: string; isActiv
   const playKeystroke = () => {
     // Haptic feedback (vibration) for supported mobile devices
     if (typeof navigator !== "undefined" && navigator.vibrate) {
-      try { navigator.vibrate(5); } catch(e) {}
+      try { navigator.vibrate(5); } catch (e) { }
     }
 
     // Realistic mechanical keyboard click using filtered noise burst
     if (audioCtxRef.current && audioCtxRef.current.state === "running") {
       try {
         const ctx = audioCtxRef.current;
-        
+
         // 1. Create a very short white noise buffer (40ms)
         const bufferSize = ctx.sampleRate * 0.04;
         const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
@@ -76,42 +76,42 @@ const Typewriter = ({ text, isActive, isInView = true }: { text: string; isActiv
         for (let i = 0; i < bufferSize; i++) {
           data[i] = Math.random() * 2 - 1;
         }
-        
+
         const noiseSource = ctx.createBufferSource();
         noiseSource.buffer = buffer;
-        
+
         // 2. Bandpass filter to shape the noise into a "clack"
         const filter = ctx.createBiquadFilter();
         filter.type = "bandpass";
         // Randomize frequency slightly (1200Hz to 2000Hz) to sound like different keys
         filter.frequency.value = 1200 + Math.random() * 800;
         filter.Q.value = 1.5; // Slightly resonant
-        
+
         // 3. Sharp volume envelope
         const gainNode = ctx.createGain();
         gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.03);
-        
+
         // Connect nodes
         noiseSource.connect(filter);
         filter.connect(gainNode);
         gainNode.connect(ctx.destination);
-        
+
         // Play
         noiseSource.start(ctx.currentTime);
-      } catch (e) {}
+      } catch (e) { }
     }
   };
 
   useEffect(() => {
     if (!isActive) return;
-    
+
     setDisplayedText("");
     let i = 0;
     const interval = setInterval(() => {
       const char = text.charAt(i);
       setDisplayedText(text.slice(0, i + 1));
-      
+
       // Play sound/vibrate only on non-whitespace characters to simulate realistic typing
       // and randomly skip some to prevent it from sounding like a machine gun
       // Only play if the component is currently in view
@@ -190,7 +190,7 @@ export function HowItWorks() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-start relative">
-          
+
           {/* Interactive Stepper Navigation */}
           <div className="lg:col-span-5 flex flex-col gap-3">
             {steps.map((step, index) => {
@@ -203,11 +203,10 @@ export function HowItWorks() {
                     setIsAutoPlaying(false);
                     if (terminalState === "closed") setTerminalState("open");
                   }}
-                  className={`group relative overflow-hidden w-full text-left rounded-2xl p-6 transition-all duration-300 border ${
-                    isActive 
-                      ? "bg-[#1C1917] border-[#8A5F41]/40 shadow-lg" 
+                  className={`group relative overflow-hidden w-full text-left rounded-2xl p-6 transition-all duration-300 border ${isActive
+                      ? "bg-[#1C1917] border-[#8A5F41]/40 shadow-lg"
                       : "bg-transparent border-transparent hover:bg-[#1C1917]/40 hover:border-[#8A5F41]/10"
-                  }`}
+                    }`}
                 >
                   {/* Active Indicator Glow */}
                   {isActive && (
@@ -244,16 +243,16 @@ export function HowItWorks() {
                     </div>
                     <ChevronRight className={`h-5 w-5 transition-transform duration-300 ${isActive ? "text-[#CCD67F] translate-x-1" : "text-[#8A5F41]/40"}`} />
                   </div>
-                  
+
                   {/* Auto-Play Progress Bar */}
                   {isActive && isAutoPlaying && terminalState !== "closed" && terminalState !== "maximized" && (
                     <motion.div
                       key={`progress-${activeStep}`}
                       initial={{ width: 0 }}
                       animate={{ width: "100%" }}
-                      transition={{ 
-                        duration: (steps[index].codeSnippet.length * 20 + 4000) / 1000, 
-                        ease: "linear" 
+                      transition={{
+                        duration: (steps[index].codeSnippet.length * 20 + 4000) / 1000,
+                        ease: "linear"
                       }}
                       className="absolute bottom-0 left-0 h-1 bg-[#CCD67F]/40"
                     />
@@ -267,18 +266,18 @@ export function HowItWorks() {
           <div className="lg:col-span-7 sticky top-32 z-50" ref={constraintsRef}>
             <AnimatePresence mode="popLayout">
               {terminalState === "closed" ? (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   className="rounded-[2rem] border border-dashed border-[#8A5F41]/20 bg-[#121110]/50 h-[300px] flex flex-col items-center justify-center cursor-pointer hover:bg-[#121110] transition-colors group"
                   onClick={() => setTerminalState("open")}
                 >
-                   <Terminal className="h-12 w-12 text-[#A77F60]/50 mb-4 group-hover:text-[#CCD67F] transition-colors" />
-                   <p className="font-mono text-sm text-[#A77F60]">Terminal Terminated.</p>
-                   <p className="font-mono text-xs text-[#A77F60]/70 mt-2 flex items-center gap-2">
-                     <RefreshCw className="h-3 w-3" /> Click to reboot
-                   </p>
+                  <Terminal className="h-12 w-12 text-[#A77F60]/50 mb-4 group-hover:text-[#CCD67F] transition-colors" />
+                  <p className="font-mono text-sm text-[#A77F60]">Terminal Terminated.</p>
+                  <p className="font-mono text-xs text-[#A77F60]/70 mt-2 flex items-center gap-2">
+                    <RefreshCw className="h-3 w-3" /> Click to reboot
+                  </p>
                 </motion.div>
               ) : (
                 <motion.div
@@ -292,57 +291,56 @@ export function HowItWorks() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                  className={`${
-                    terminalState === "maximized" 
-                      ? "fixed inset-4 md:inset-10 z-[100] shadow-2xl shadow-black/80" 
+                  className={`${terminalState === "maximized"
+                      ? "fixed inset-4 md:inset-10 z-[100] shadow-2xl shadow-black/80"
                       : "relative shadow-2xl"
-                  } rounded-[2rem] border border-[#8A5F41]/20 bg-[#121110] overflow-hidden flex flex-col ${terminalState === "minimized" ? "h-[60px]" : "h-auto"}`}
+                    } rounded-[2rem] border border-[#8A5F41]/20 bg-[#121110] overflow-hidden flex flex-col ${terminalState === "minimized" ? "h-[60px]" : "h-auto"}`}
                 >
                   {/* Backdrop for maximized state to dim background */}
                   {terminalState === "maximized" && (
-                     <div className="fixed inset-[-100px] bg-black/80 -z-10" onClick={() => setTerminalState("open")} />
+                    <div className="fixed inset-[-100px] bg-black/80 -z-10" onClick={() => setTerminalState("open")} />
                   )}
 
                   {/* Terminal Header */}
-                  <div 
+                  <div
                     className={`flex items-center gap-2 px-6 py-4 border-b border-[#8A5F41]/10 bg-[#161412] shrink-0 select-none ${terminalState !== "maximized" ? "cursor-grab active:cursor-grabbing" : "cursor-default"}`}
                     onDoubleClick={() => setTerminalState(terminalState === "maximized" ? "open" : "maximized")}
                   >
                     <div className="flex items-center gap-2 group">
-                      <button 
+                      <button
                         onClick={handleTerminalClose}
                         className="h-3.5 w-3.5 rounded-full bg-[#373432] group-hover:bg-[#EF4444] transition-colors flex items-center justify-center focus:outline-none"
                         aria-label="Close terminal"
                       >
-                         <div className="h-1.5 w-1.5 opacity-0 group-hover:opacity-100 bg-black/40 rounded-sm rotate-45 scale-x-[0.2]" />
-                         <div className="h-1.5 w-1.5 opacity-0 group-hover:opacity-100 bg-black/40 rounded-sm -rotate-45 scale-x-[0.2] absolute" />
+                        <div className="h-1.5 w-1.5 opacity-0 group-hover:opacity-100 bg-black/40 rounded-sm rotate-45 scale-x-[0.2]" />
+                        <div className="h-1.5 w-1.5 opacity-0 group-hover:opacity-100 bg-black/40 rounded-sm -rotate-45 scale-x-[0.2] absolute" />
                       </button>
-                      <button 
+                      <button
                         onClick={handleTerminalMinimize}
                         className="h-3.5 w-3.5 rounded-full bg-[#373432] group-hover:bg-[#EAB308] transition-colors flex items-center justify-center focus:outline-none"
                         aria-label="Minimize terminal"
                       >
-                         <div className="h-[1.5px] w-2 opacity-0 group-hover:opacity-100 bg-black/40 rounded-sm" />
+                        <div className="h-[1.5px] w-2 opacity-0 group-hover:opacity-100 bg-black/40 rounded-sm" />
                       </button>
-                      <button 
+                      <button
                         onClick={handleTerminalMaximize}
                         className="h-3.5 w-3.5 rounded-full bg-[#373432] group-hover:bg-[#CCD67F] transition-colors flex items-center justify-center focus:outline-none"
                         aria-label="Maximize terminal"
                       >
-                         <div className="h-1.5 w-1.5 opacity-0 group-hover:opacity-100 bg-black/40 rounded-sm rotate-45 flex items-center justify-center">
-                            <div className="h-[5px] w-[5px] bg-[#CCD67F] rotate-[-45deg]" />
-                         </div>
+                        <div className="h-1.5 w-1.5 opacity-0 group-hover:opacity-100 bg-black/40 rounded-sm rotate-45 flex items-center justify-center">
+                          <div className="h-[5px] w-[5px] bg-[#CCD67F] rotate-[-45deg]" />
+                        </div>
                       </button>
                     </div>
                     <span className="ml-4 font-mono text-xs text-[#A77F60] flex-1 text-center pr-12">
                       {terminalState === "maximized" ? "user@codeatlas: ~/project (fullscreen)" : "user@codeatlas: ~/project"}
                     </span>
                   </div>
-                  
+
                   {/* Terminal Body */}
                   <AnimatePresence>
                     {terminalState !== "minimized" && (
-                      <motion.div 
+                      <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: terminalState === "maximized" ? "100%" : "auto" }}
                         exit={{ opacity: 0, height: 0 }}
@@ -350,29 +348,29 @@ export function HowItWorks() {
                       >
                         {/* Background Glow */}
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-64 rounded-full bg-[#CCD67F]/5 blur-[100px] pointer-events-none" />
-                        
+
                         <div className="relative z-10 h-full">
-                           <pre className="font-mono text-sm leading-[1.7] text-[#F3E4C9]/90 whitespace-pre-wrap">
-                             {steps.map((step, index) => {
-                               // Keep previous steps visible but dim
-                               if (index < activeStep) {
-                                 return (
-                                   <div key={step.id} className="opacity-40 mb-6">
-                                     {step.codeSnippet}
-                                   </div>
-                                 );
-                               }
-                               // Current active step gets typewriter effect
-                               if (index === activeStep) {
-                                 return (
-                                   <div key={step.id} className="mb-6">
-                                     <Typewriter text={step.codeSnippet} isActive={true} isInView={isInView} />
-                                   </div>
-                                 );
-                               }
-                               return null;
-                             })}
-                           </pre>
+                          <pre className="font-mono text-sm leading-[1.7] text-[#F3E4C9]/90 whitespace-pre-wrap">
+                            {steps.map((step, index) => {
+                              // Keep previous steps visible but dim
+                              if (index < activeStep) {
+                                return (
+                                  <div key={step.id} className="opacity-40 mb-6">
+                                    {step.codeSnippet}
+                                  </div>
+                                );
+                              }
+                              // Current active step gets typewriter effect
+                              if (index === activeStep) {
+                                return (
+                                  <div key={step.id} className="mb-6">
+                                    <Typewriter text={step.codeSnippet} isActive={true} isInView={isInView} />
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })}
+                          </pre>
                         </div>
                       </motion.div>
                     )}
