@@ -8,7 +8,7 @@ import { rimraf } from "rimraf";
 import { ApiError } from "../utils/api-error";
 import { buildRepositoryNamespace } from "../vectorstore/pinecone.service";
 import type { IndexedRepository, RepositoryIntakeInput, RepositoryMetadata } from "../types";
-import { indexRepository } from "./indexing.service";
+import { indexRepository, indexRepositoryWithProgress } from "./indexing.service";
 
 interface ParsedGitHubRepository {
   owner: string;
@@ -43,8 +43,17 @@ function parseGitHubRepositoryUrl(repoUrl: string): ParsedGitHubRepository {
   return { owner, repoName, cloneUrl, sourceUrl };
 }
 
+export type ProgressEmitter = (event: string, data: object) => void;
+
 export async function analyzeRepository(
   input: RepositoryIntakeInput
+): Promise<IndexedRepository> {
+  return analyzeRepositoryWithProgress(input, () => {});
+}
+
+export async function analyzeRepositoryWithProgress(
+  input: RepositoryIntakeInput,
+  emit: ProgressEmitter
 ): Promise<IndexedRepository> {
   const repository = parseGitHubRepositoryUrl(input.repoUrl);
   const repoId = randomUUID();
@@ -54,20 +63,21 @@ export async function analyzeRepository(
 
   await fs.mkdir(localPath, { recursive: true });
 
+  // Step 1 — Clone
+  emit("progress", { step: "clone", label: "Cloning repository", pct: 5 });
   const git = simpleGit();
-
   try {
-    const cloneOptions = ["--depth", "1"];
+    const cloneOptions = ["--depth", "50"];
     if (input.branch) {
       cloneOptions.push("--branch", input.branch, "--single-branch");
     }
-
     await git.clone(repository.cloneUrl, localPath, cloneOptions);
   } catch (error) {
     throw new ApiError(400, "Unable to clone the repository. Verify the URL and branch.", {
       cause: error instanceof Error ? error.message : "Unknown clone failure",
     });
   }
+  emit("progress", { step: "clone", label: "Repository cloned", pct: 15 });
 
   const repositoryMetadata: RepositoryMetadata = {
     repoId,
@@ -82,14 +92,12 @@ export async function analyzeRepository(
   };
 
   try {
-    return await indexRepository(repositoryMetadata);
+    return await indexRepositoryWithProgress(repositoryMetadata, emit);
   } finally {
-    // Clean up cloned repo to prevent disk from filling up
     try {
       await rimraf(localPath, { preserveRoot: false });
-      console.log(`[cleanup] ✅ Successfully removed temporary directory ${localPath}`);
     } catch (err) {
-      console.error(`[cleanup] ❌ Failed to remove ${localPath}:`, err);
+      console.error(`[cleanup] failed to remove ${localPath}:`, err);
     }
   }
 }

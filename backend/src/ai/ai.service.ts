@@ -29,19 +29,26 @@ export async function generateAnswer(
 
   if (mode === "overview") {
     systemPrompt = `
-You are an expert software architect.
-Generate a comprehensive repository overview based on the provided repository metadata (JSON format).
+You are an expert software architect. Generate a concise repository overview from the provided JSON metadata.
 
-Your report must include the following sections formatted in Markdown:
-- **Purpose**: What this repository is for.
-- **Technologies**: The tech stack used.
-- **Major Features**: High-level features.
-- **Architecture**: How the frontend, backend, and database interact.
-- **Pages**: List of key pages.
-- **Components**: List of key components.
-- **API Routes**: List of key API endpoints.
+FORMATTING RULES — follow strictly:
+- Use ## for section headings (NOT #)
+- Use bullet points (- ) for all lists
+- Use --- to separate major sections
+- Keep paragraphs short (2-3 sentences max)
+- Do NOT use h1 headings or emojis in headings
+- Code references go in backtick inline code
 
-Use only the provided JSON context to infer the architecture and features. Be professional, detailed, and clear.
+Sections to include:
+## Purpose
+## Tech Stack
+## Key Features
+## Architecture
+## Pages
+## Components
+## API Routes
+
+Be concise, professional, and use only the provided JSON context.
 
 CONTEXT:
 ${context}
@@ -49,15 +56,21 @@ ${context}
   } else if (mode === "flow") {
     systemPrompt = `
 You are an expert software architect and flow tracer.
-Your goal is to map out the execution flow of the codebase based on the interconnected context provided.
+Map out the execution flow of the codebase based on the context provided.
 
-Structure your response clearly:
-1. 🗺️ Flow Diagram: Create a visual step-by-step map using arrows (e.g., \`LoginPage ↓ handleLogin() ↓ AuthService.login()\`).
-2. 📖 Step-by-Step Explanation: Explain exactly what happens at each step in the flow.
-   - Mention specific files, functions, and the purpose of the call.
-   - Explain how data moves from one step to the next.
+FORMATTING RULES:
+- Use ## for section headings (NOT #)
+- Use bullet points (- ) for lists
+- Use → arrows for flow steps (e.g. LoginPage → handleLogin() → AuthService.login())
 
-Answer ONLY using the repository context provided below. If the flow cannot be fully traced, state what is missing.
+Structure your response:
+## Flow Diagram
+A step-by-step visual map using arrows showing the execution path.
+
+## Step-by-Step Explanation
+For each step: file name, function name, what it does, and how data moves.
+
+Answer ONLY using the repository context. If a step cannot be traced, state what is missing.
 
 CONTEXT:
 ${context}
@@ -67,12 +80,30 @@ ${context}
 You are an expert software architect.
 Your goal is to generate a visual architectural diagram based on the interconnected context provided.
 
-Structure your response clearly:
+Structure your response:
 1. Provide a brief 1-sentence summary of what this diagram represents.
-2. Generate a \`mermaid\` flowchart diagram code block that visually represents the dependencies, function calls, API calls, and component hierarchy.
-3. The diagram MUST be written in valid Mermaid syntax enclosed in \`\`\`mermaid ... \`\`\`.
+2. Generate a valid Mermaid flowchart in a \`\`\`mermaid\`\`\` code block.
 
-Use the provided CONTEXT (which includes SYMBOLS, DEPS, HOOKS, and API CALLS) to accurately map the relationships.
+CRITICAL MERMAID RULES — follow these EXACTLY or the diagram will not render:
+- Start the diagram with EXACTLY: graph TD
+- Use ONLY flowchart node syntax: A[Label] --> B[Label] or A -->|edge label| B
+- Node IDs must be alphanumeric with NO spaces (use camelCase: e.g. AuthService, loginHandler)
+- NEVER use: participant, note, ->>, sequenceDiagram, classDiagram, or any other diagram type
+- NEVER use quoted strings inside node definitions
+- Keep node labels short (max 4 words)
+- Include max 20 nodes to keep it readable
+
+Example of VALID output:
+\`\`\`mermaid
+graph TD
+  UserInput[User Input] --> ChatInput[ChatInput]
+  ChatInput -->|POST /chat| Backend[Express Backend]
+  Backend --> Pinecone[Pinecone Query]
+  Backend --> Groq[Groq LLM]
+  Groq -->|answer| ChatMessage[ChatMessage]
+\`\`\`
+
+Use the provided CONTEXT to accurately map the relationships.
 
 CONTEXT:
 ${context}
@@ -81,21 +112,25 @@ ${context}
     systemPrompt = `
 You are an expert AI software architect and codebase assistant.
 
-Your goal is to explain the codebase so that anyone—from a non-technical manager to a senior engineer—can understand it.
-
 Answer ONLY using the repository context provided below.
 If the answer cannot be determined from the provided code, say exactly:
 "I couldn't find enough information in the repository."
 
-Structure your response clearly:
-1. 🎯 High-Level Summary (For managers & non-tech): Explain what the code does in plain, simple English without jargon.
-2. 🛠️ Technical Deep Dive (For engineers):
-   - Mention specific file names and exact lines of code.
-   - Mention functions, classes, and components.
-   - Explain the step-by-step code flow and architecture.
-   - Provide concise code snippets if highly relevant.
+FORMATTING RULES:
+- Use ## for section headings (NOT #)
+- Use bullet points (- ) for lists
+- Keep responses focused and concise
+- Reference specific file names, functions, and components
+- Use inline code backticks for code references
 
-Keep your tone helpful, professional, and educational.
+Structure your response:
+## Summary
+Plain English explanation of what the code does.
+
+## Technical Detail
+- Specific files, functions, and components involved
+- Step-by-step code flow
+- Relevant code snippets if helpful
 
 CONTEXT:
 ${context}

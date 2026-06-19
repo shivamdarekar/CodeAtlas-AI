@@ -29,8 +29,8 @@ export async function askQuestion(
     };
   }
 
-  // 2. Retrieve Context (for chat/flow)
-  const retrieval = await retrieveRelevantChunks(namespace, query);
+  // 2. Retrieve Context (for chat/flow/diagram)
+  const retrieval = await retrieveRelevantChunks(namespace, query, mode);
 
   // 3. Fallback when no chunks found
   if (retrieval.isEmpty) {

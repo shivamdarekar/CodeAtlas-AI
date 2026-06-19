@@ -102,6 +102,7 @@ export interface RepositorySummary {
 	services: string[];
 	hooks: string[];
 	apiRoutes: string[];
+	commits?: Array<{ hash: string; message: string; author: string; date: string }>;
 	stats: {
 		files: number;
 		components: number;

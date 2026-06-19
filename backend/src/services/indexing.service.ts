@@ -1,4 +1,5 @@
 import { promises as fs } from "fs";
+import simpleGit from "simple-git";
 
 import type { IndexedRepository, RepositoryChunk, RepositoryIndexSummary, RepositoryMetadata, RepositorySummary } from "../types";
 import { ApiError } from "../utils/api-error";
@@ -26,8 +27,17 @@ async function processFile(
 	}
 }
 
+import type { ProgressEmitter } from "./repository.service";
+
 export async function indexRepository(
 	repository: RepositoryMetadata
+): Promise<IndexedRepository> {
+	return indexRepositoryWithProgress(repository, () => {});
+}
+
+export async function indexRepositoryWithProgress(
+	repository: RepositoryMetadata,
+	emit: ProgressEmitter
 ): Promise<IndexedRepository> {
 	const files = await scanRepositoryFiles(repository.localPath);
 	const scannedFiles = files.length;
@@ -39,21 +49,33 @@ export async function indexRepository(
 		namespace: repository.namespace,
 	};
 
-	console.log(`[indexing] processing ${scannedFiles} files (concurrency=${FILE_READ_CONCURRENCY})`);
+	emit("progress", { step: "scan", label: `Scanning files`, detail: `${scannedFiles} files found`, pct: 20 });
 
-	// Read and chunk files concurrently with a pool of FILE_READ_CONCURRENCY workers
+	// Read and chunk files concurrently
 	const chunks: RepositoryChunk[] = [];
 	let nextFile = 0;
+	let processedFiles = 0;
 
 	async function worker(): Promise<void> {
 		while (nextFile < files.length) {
 			const fileIndex = nextFile++;
 			const file = files[fileIndex];
 			const result = await processFile(file, context);
+			processedFiles++;
 			if (result === null) {
 				skippedFiles++;
 			} else {
 				chunks.push(...result);
+			}
+			// Emit chunking progress every 10 files
+			if (processedFiles % 10 === 0 || processedFiles === scannedFiles) {
+				const pct = 20 + Math.round((processedFiles / scannedFiles) * 30);
+				emit("progress", {
+					step: "chunk",
+					label: "AST parsing & chunking",
+					detail: `${processedFiles}/${scannedFiles} files · ${chunks.length} chunks`,
+					pct,
+				});
 			}
 		}
 	}
@@ -68,9 +90,11 @@ export async function indexRepository(
 		throw new ApiError(400, "No supported files were found to index in this repository.");
 	}
 
-	console.log(`[indexing] ${chunks.length} chunks from ${scannedFiles - skippedFiles} files → upserting to Pinecone`);
+	emit("progress", { step: "embed", label: "Generating embeddings", detail: `${chunks.length} chunks`, pct: 55 });
 
 	await upsertRepositoryChunks(repository.namespace, chunks);
+
+	emit("progress", { step: "upsert", label: "Storing vectors in Pinecone", detail: `${chunks.length} vectors`, pct: 85 });
 
 	const indexing: RepositoryIndexSummary = {
 		repoId: repository.repoId,
@@ -141,8 +165,23 @@ export async function indexRepository(
 	summary.stats.components = uniqueComponents.size;
 	summary.stats.functions = uniqueFunctions.size;
 
+	// Capture git log while repo is still on disk (silently skip if not a git repo / ZIP)
+	try {
+		const git = simpleGit(repository.localPath);
+		const log = await git.log({ maxCount: 20 });
+		summary.commits = log.all.map((c) => ({
+			hash: c.hash.slice(0, 7),
+			message: c.message.trim(),
+			author: c.author_name,
+			date: c.date,
+		}));
+	} catch {
+		// Not a git repo (e.g. ZIP upload) — commits stay undefined
+	}
+
 	await saveRepositorySummary(repository.namespace, summary);
-	// ------------------------------------------------
+
+	emit("progress", { step: "summary", label: "Saving architecture summary", detail: `${uniqueComponents.size} components · ${uniqueFunctions.size} functions`, pct: 98 });
 
 	return {
 		...repository,
