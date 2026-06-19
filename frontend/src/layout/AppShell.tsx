@@ -1,11 +1,11 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useRepoStore } from "@/store/repo-store";
 import { useUiStore } from "@/store/ui-store";
 import { ChatSidebar } from "./ChatSidebar";
 import { ChatWindow } from "@/components/chat/ChatWindow";
-import { ChatInput } from "@/components/chat/ChatInput";
+import { ChatInput, type ChatInputHandle } from "@/components/chat/ChatInput";
 import CodebaseGraph from "@/components/diagrams/CodebaseGraph";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
@@ -13,10 +13,13 @@ import { GitBranch } from "lucide-react";
 
 export function AppShell({ namespace }: { namespace: string }) {
   const router = useRouter();
-  const { activeRepo, repoSummary, setRepoSummary } = useRepoStore();
+  const { activeRepo, repoSummary, setRepoSummary, _hasHydrated } = useRepoStore();
   const { activeView } = useUiStore();
+  const chatInputRef = useRef<ChatInputHandle>(null);
 
   useEffect(() => {
+    if (!_hasHydrated) return;
+
     if (!activeRepo || activeRepo.namespace !== namespace) {
       toast.error("Repository context not found. Please analyze again.");
       router.push("/analyze");
@@ -28,11 +31,13 @@ export function AppShell({ namespace }: { namespace: string }) {
         if (res.data.statusCode === 200 && res.data.data) {
           setRepoSummary(res.data.data);
         }
-      }).catch(() => {
-        // Silently fail, overview might just be empty
+      }).catch((err) => {
+        console.warn("[AppShell] Could not load repo summary:", err?.response?.data?.message ?? err.message);
       });
     }
-  }, [namespace, activeRepo, repoSummary, router, setRepoSummary]);
+  }, [namespace, activeRepo, repoSummary, router, setRepoSummary, _hasHydrated]);
+
+  if (!_hasHydrated) return null;
 
   if (!activeRepo) return null;
 
@@ -63,9 +68,9 @@ export function AppShell({ namespace }: { namespace: string }) {
         {/* Main content */}
         {activeView === "chat" ? (
           <>
-            <ChatWindow />
+            <ChatWindow onSuggestion={(text) => chatInputRef.current?.fill(text)} />
             <div className="shrink-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a] to-transparent pt-2 z-10">
-              <ChatInput />
+              <ChatInput ref={chatInputRef} />
             </div>
           </>
         ) : (

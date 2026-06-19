@@ -1,15 +1,31 @@
 "use client";
-import { FolderGit2, Trash2, Layout, MessageSquare, FileCode2, Boxes } from "lucide-react";
+import { FolderGit2, Trash2, Layout, MessageSquare, FileCode2, Boxes, GitCommitHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useRepoStore } from "@/store/repo-store";
 import { useUiStore } from "@/store/ui-store";
 import { useChatStore } from "@/store/chat-store";
+import { api } from "@/lib/api";
 
 export function ChatSidebar() {
   const router = useRouter();
   const { activeRepo, clearRepo } = useRepoStore();
   const { activeView, setActiveView } = useUiStore();
-  const { clearMessages } = useChatStore();
+  const { clearMessages, addMessage } = useChatStore();
+  const [loadingCommits, setLoadingCommits] = useState(false);
+
+  const handleCommitSummary = async () => {
+    if (!activeRepo || loadingCommits) return;
+    setLoadingCommits(true);
+    try {
+      const res = await api.getCommitSummary(activeRepo.namespace);
+      addMessage({ role: "assistant", content: res.data.data.answer });
+    } catch {
+      addMessage({ role: "assistant", content: "No commit history found for this repository." });
+    } finally {
+      setLoadingCommits(false);
+    }
+  };
 
   const handleClear = () => {
     clearRepo();
@@ -106,6 +122,21 @@ export function ChatSidebar() {
               );
             })}
           </div>
+        </div>
+
+        {/* Commit Summary */}
+        <div className="mt-6">
+          <div className="text-[10px] font-medium uppercase tracking-[0.1em] text-[#4a4d46] mb-2 px-1">
+            Actions
+          </div>
+          <button
+            onClick={() => { setActiveView("chat"); handleCommitSummary(); }}
+            disabled={loadingCommits}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-[#8e9289] hover:text-[#CCD67F] hover:bg-white/[0.03] border border-transparent transition-all duration-150 active:scale-[0.98] disabled:opacity-50"
+          >
+            <GitCommitHorizontal className="w-4 h-4 shrink-0" strokeWidth={1.5} />
+            {loadingCommits ? "Loading..." : "Commit Summary"}
+          </button>
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useImperativeHandle, forwardRef } from "react";
 import { Send, Loader2 } from "lucide-react";
 import { useChatStore } from "@/store/chat-store";
 import { useRepoStore } from "@/store/repo-store";
@@ -7,11 +7,22 @@ import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { ModeSelector } from "./ModeSelector";
 
-export function ChatInput() {
+export interface ChatInputHandle {
+  fill: (text: string) => void;
+}
+
+export const ChatInput = forwardRef<ChatInputHandle>((_, ref) => {
   const [query, setQuery] = useState("");
   const { activeMode, addMessage, setStreaming, isStreaming } = useChatStore();
   const { activeRepo } = useRepoStore();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    fill: (text: string) => {
+      setQuery(text);
+      textareaRef.current?.focus();
+    },
+  }));
 
   const adjustHeight = () => {
     if (textareaRef.current) {
@@ -41,7 +52,7 @@ export function ChatInput() {
         addMessage({
           role: "assistant",
           content: response.data.data.answer,
-          mode: response.data.data.mode,
+          mode: activeMode,
           chunksUsed: response.data.data.chunksUsed,
         });
       } else {
@@ -63,14 +74,10 @@ export function ChatInput() {
 
   return (
     <div className="w-full max-w-3xl mx-auto px-4 pb-4 pt-2">
-      {/* Unified input container */}
       <div className="bg-[#111210] border border-white/[0.06] rounded-2xl overflow-hidden shadow-[0_-4px_24px_-6px_rgba(0,0,0,0.4)]">
-        {/* Mode selector row */}
         <div className="flex items-center px-3 pt-2.5 pb-1 border-b border-white/[0.04]">
           <ModeSelector />
         </div>
-
-        {/* Input row */}
         <form onSubmit={handleSubmit} className="flex items-end gap-2 p-2">
           <textarea
             ref={textareaRef}
@@ -97,4 +104,6 @@ export function ChatInput() {
       </div>
     </div>
   );
-}
+});
+
+ChatInput.displayName = "ChatInput";

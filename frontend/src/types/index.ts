@@ -21,16 +21,21 @@ export interface IndexedRepository {
   };
 }
 
+// Matches backend RepositorySummary exactly — used for both summary endpoint and repo list
 export interface RepoSummary {
   repoId: string;
   repoName: string;
+  namespace: string;
   pages: string[];
   components: string[];
   hooks: string[];
   services: string[];
   apiRoutes: string[];
-  stats: { totalFiles: number; totalChunks: number };
+  stats: { files: number; components: number; functions: number };
 }
+
+// Alias for the repo list endpoint (same shape)
+export type RepositorySummary = RepoSummary;
 
 // ── Chat ─────────────────────────────────────────────────────────────────────
 export type ChatMode = "chat" | "overview" | "flow" | "diagram";
@@ -46,8 +51,9 @@ export interface ChatMessage {
 
 export interface ChatResponse {
   answer: string;
-  mode: ChatMode;
-  chunksUsed: number;
+  mode?: ChatMode;
+  chunksUsed?: number;
+  sources?: Array<{ filePath: string; symbolName: string; score: number }>;
 }
 
 // ── React Flow ────────────────────────────────────────────────────────────────
@@ -57,21 +63,4 @@ export interface GraphNodeData {
   label: string;
   filePath: string;
   type: GraphNodeType;
-}
-
-// ── Repository Summary (from /api/v1/repos) ──────────────────────────────────
-export interface RepositorySummary {
-  repoId: string;
-  repoName: string;
-  namespace: string;
-  pages: string[];
-  components: string[];
-  services: string[];
-  hooks: string[];
-  apiRoutes: string[];
-  stats: {
-    files: number;
-    components: number;
-    functions: number;
-  };
 }

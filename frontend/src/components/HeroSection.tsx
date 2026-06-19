@@ -27,7 +27,7 @@ const item = {
   show: {
     opacity: 1,
     y: 0,
-    transition: springTransition,
+    transition: springTransition as import("framer-motion").Transition,
   },
 };
 
@@ -220,17 +220,17 @@ export function HeroSection() {
         {/* Headline */}
         <motion.h1
           variants={reduce ? undefined : item}
-          className="font-[family-name:var(--font-instrument)] text-[64px] text-white mb-[32px] leading-[1.05] tracking-[-0.02em] max-w-[800px] font-normal"
+          className="font-[family-name:var(--font-instrument)] text-[64px] text-white mb-[32px] leading-[1.05] tracking-[-0.02em] max-w-[800px] font-normal drop-shadow-[0_2px_24px_rgba(0,0,0,0.8)]"
         >
-          Understand any codebase <span className="italic opacity-80 text-[#e3e2de]">in seconds.</span>
+          Understand any codebase <span className="italic text-[#CCD67F]">in seconds.</span>
         </motion.h1>
 
         {/* Description */}
         <motion.p
           variants={reduce ? undefined : item}
-          className="font-[family-name:var(--font-inter)] text-lg md:text-xl text-[#F3E4C9]/90 max-w-[65ch] mb-[40px] leading-relaxed"
+          className="font-[family-name:var(--font-inter)] text-lg md:text-xl text-white/80 max-w-[65ch] mb-[40px] leading-relaxed drop-shadow-[0_1px_12px_rgba(0,0,0,0.9)]"
         >
-          Explore repositories, generate documentation, and chat with your code using context-aware AI. Built for high-performance engineering teams.
+          Index any GitHub repo with a real TypeScript AST — not text splitting. Then chat with your code, trace execution flows, and generate architecture diagrams using AI.
         </motion.p>
 
         {/* Layer 5: Actions */}
@@ -254,8 +254,8 @@ export function HeroSection() {
             className="h-[60px] rounded-xl border border-white/20 bg-transparent text-white hover:border-white/40 hover:bg-white/5 px-[32px] font-medium text-[15px] transition-all"
             asChild
           >
-            <Link href="https://github.com/surajyadav04/CodeAtlas-AI" target="_blank">
-              View Demo
+            <Link href="https://github.com/shivamdarekar/CodeAtlas-AI" target="_blank">
+              GitHub
             </Link>
           </Button>
         </motion.div>
@@ -500,29 +500,7 @@ export function HeroSection() {
         </div>
       </motion.div>
 
-      {/* Trusted Companies Grid (Railway-style continuation) */}
-      <div className="relative z-20 w-full border-t border-[rgba(255,255,255,0.03)] pt-16 pb-20 px-6 mt-16 bg-transparent">
-        <p className="text-center font-[family-name:var(--font-inter)] text-xs uppercase tracking-[0.2em] text-[#A77F60] mb-12 font-medium">
-          Trusted by developers worldwide
-        </p>
-        <div className="max-w-[1200px] mx-auto w-full border-l border-t border-[rgba(255,255,255,0.03)]">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-            {[
-              "GitHub", "Vercel", "Supabase", "OpenAI", "Railway", "Replit",
-              "Stripe", "Linear", "Figma", "Notion", "Scale", "HuggingFace"
-            ].map((company, i) => (
-              <div 
-                key={i} 
-                className="flex items-center justify-center h-[120px] border-r border-b border-[rgba(255,255,255,0.03)] opacity-50 hover:opacity-80 transition-opacity duration-300 cursor-default"
-              >
-                <span className="font-[family-name:var(--font-inter)] text-[18px] font-semibold tracking-tight grayscale">
-                  {company}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+
     </section>
   </div>
   );

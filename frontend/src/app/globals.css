@@ -154,6 +154,40 @@
   }
 }
 
+/* ── Chat prose: override global heading sizes and font inside chat messages ── */
+.chat-prose h1,
+.chat-prose h2,
+.chat-prose h3,
+.chat-prose h4,
+.chat-prose h5,
+.chat-prose h6 {
+  font-family: var(--font-sans) !important;
+  font-size: unset !important;
+  font-weight: unset !important;
+  line-height: unset !important;
+  letter-spacing: unset !important;
+}
+
+/* ── React Flow controls visibility fix ── */
+.react-flow__controls-button {
+  background: #1a1c19 !important;
+  border-color: rgba(255,255,255,0.08) !important;
+  color: #e3e2de !important;
+  fill: #e3e2de !important;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 6px !important;
+}
+.react-flow__controls-button:hover {
+  background: #232620 !important;
+  border-color: rgba(255,255,255,0.15) !important;
+}
+.react-flow__controls-button svg {
+  fill: #e3e2de !important;
+  max-width: 14px;
+  max-height: 14px;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;

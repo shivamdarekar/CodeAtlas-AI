@@ -11,7 +11,7 @@ const SUGGESTIONS = [
   { label: "How does error handling work?", icon: MessageSquare },
 ];
 
-export function ChatWindow() {
+export function ChatWindow({ onSuggestion }: { onSuggestion?: (text: string) => void }) {
   const { messages, isStreaming } = useChatStore();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -47,6 +47,7 @@ export function ChatWindow() {
             return (
               <button
                 key={s.label}
+                onClick={() => onSuggestion?.(s.label)}
                 className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-white/[0.06] bg-white/[0.02] text-xs text-[#8e9289] hover:text-[#e3e2de] hover:border-white/[0.12] hover:bg-white/[0.04] transition-all duration-200 active:scale-[0.97]"
               >
                 <Icon className="w-3.5 h-3.5" strokeWidth={1.5} />

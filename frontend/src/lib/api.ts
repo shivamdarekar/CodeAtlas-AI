@@ -1,17 +1,13 @@
 import axios from "axios";
-import type { ApiResponse, IndexedRepository, RepoSummary, ChatMode, ChatResponse, RepositorySummary } from "@/types";
+import type { ApiResponse, IndexedRepository, RepoSummary, ChatMode, ChatResponse } from "@/types";
 
 const client = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api/v1",
   headers: { "Content-Type": "application/json" },
-  timeout: 120_000, // indexing can take up to 2 minutes
+  timeout: 120_000,
 });
 
 export const api = {
-  // List all indexed repositories
-  getRepositories: () =>
-    client.get<ApiResponse<RepositorySummary[]>>("/repos"),
-
   // Index a new repository
   indexRepository: (repoUrl: string, branch?: string) =>
     client.post<ApiResponse<IndexedRepository>>("/repos/analyze", { repoUrl, branch }),
@@ -19,6 +15,10 @@ export const api = {
   // Get the summary JSON for React Flow canvas
   getRepoSummary: (namespace: string) =>
     client.get<ApiResponse<RepoSummary>>(`/repos/${namespace}/summary`),
+
+  // Get LLM-generated commit summary
+  getCommitSummary: (namespace: string) =>
+    client.get<ApiResponse<{ answer: string; commits: Array<{ hash: string; message: string; author: string; date: string }> }>>(`/repos/${namespace}/commits/summary`),
 
   // Send a chat message
   chat: (namespace: string, query: string, mode: ChatMode) =>
