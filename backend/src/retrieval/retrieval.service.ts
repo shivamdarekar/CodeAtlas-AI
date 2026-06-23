@@ -28,6 +28,12 @@ export async function retrieveRelevantChunks(
     return match.score !== undefined && match.score > similarityThreshold;
   });
 
+  // Fallback: If strict similarity threshold yields no results, fallback to best top K matches (simple search)
+  if (relevantChunks.length === 0 && matches.length > 0) {
+    console.log(`[retrieval] Strict threshold failed. Falling back to top ${topK} best-effort matches.`);
+    relevantChunks = matches;
+  }
+
   // 4. Multi-hop Flow Tracing
   if ((mode === "flow" || mode === "diagram") && relevantChunks.length > 0) {
     const symbolsToFetch = new Set<string>();
