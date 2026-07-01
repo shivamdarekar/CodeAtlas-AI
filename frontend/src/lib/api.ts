@@ -1,8 +1,10 @@
 import axios from "axios";
 import type { ApiResponse, IndexedRepository, RepoSummary, ChatMode, ChatResponse } from "@/types";
 
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api/v1";
+
 const client = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api/v1",
+  baseURL: API_BASE_URL,
   headers: { "Content-Type": "application/json" },
   timeout: 120_000,
 });
@@ -23,4 +25,12 @@ export const api = {
   // Send a chat message
   chat: (namespace: string, query: string, mode: ChatMode) =>
     client.post<ApiResponse<ChatResponse>>(`/repos/${namespace}/chat`, { query, mode }),
+
+  // Stream a chat message
+  chatStream: (namespace: string, query: string, mode: ChatMode) =>
+    fetch(`${API_BASE_URL}/repos/${namespace}/chat/stream`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+      body: JSON.stringify({ query, mode }),
+    }),
 };

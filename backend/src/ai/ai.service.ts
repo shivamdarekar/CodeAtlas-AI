@@ -1,5 +1,6 @@
 import { ChatGroq } from "@langchain/groq";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import type { ChatMode } from "../types";
 
 let chatModel: ChatGroq | null = null;
 
@@ -18,17 +19,9 @@ function getChatModel(): ChatGroq {
   return chatModel;
 }
 
-import type { ChatMode } from "../types";
-
-export async function generateAnswer(
-  query: string,
-  context: string,
-  mode: ChatMode = "chat"
-): Promise<string> {
-  let systemPrompt = "";
-
+function buildSystemPrompt(context: string, mode: ChatMode): string {
   if (mode === "overview") {
-    systemPrompt = `
+    return `
 You are an expert software architect. Generate a concise repository overview from the provided JSON metadata.
 
 FORMATTING RULES — follow strictly:
@@ -53,8 +46,10 @@ Be concise, professional, and use only the provided JSON context.
 CONTEXT:
 ${context}
 `.trim();
-  } else if (mode === "flow") {
-    systemPrompt = `
+  }
+
+  if (mode === "flow") {
+    return `
 You are an expert software architect and flow tracer.
 Map out the execution flow of the codebase based on the context provided.
 
@@ -75,14 +70,17 @@ Answer ONLY using the repository context. If a step cannot be traced, state what
 CONTEXT:
 ${context}
 `.trim();
-  } else if (mode === "diagram") {
-    systemPrompt = `
+  }
+
+  if (mode === "diagram") {
+    return `
 You are an expert software architect.
 Your goal is to generate a visual architectural diagram based on the interconnected context provided.
 
+Return ONLY one Mermaid code block and nothing else.
+
 Structure your response:
-1. Provide a brief 1-sentence summary of what this diagram represents.
-2. Generate a valid Mermaid flowchart in a \`\`\`mermaid\`\`\` code block.
+1. Generate a valid Mermaid flowchart in a \`\`\`mermaid\`\`\` code block.
 
 CRITICAL MERMAID RULES — follow these EXACTLY or the diagram will not render:
 - Start the diagram with EXACTLY: graph TD
@@ -92,6 +90,7 @@ CRITICAL MERMAID RULES — follow these EXACTLY or the diagram will not render:
 - NEVER use quoted strings inside node definitions
 - Keep node labels short (max 4 words)
 - Include max 20 nodes to keep it readable
+ - Prefer simple linear or branching flows over dense graphs
 
 Example of VALID output:
 \`\`\`mermaid
@@ -108,8 +107,9 @@ Use the provided CONTEXT to accurately map the relationships.
 CONTEXT:
 ${context}
 `.trim();
-  } else {
-    systemPrompt = `
+  }
+
+  return `
 You are an expert AI software architect and codebase assistant.
 
 Answer ONLY using the repository context provided below.
@@ -135,7 +135,14 @@ Plain English explanation of what the code does.
 CONTEXT:
 ${context}
 `.trim();
-  }
+}
+
+export async function generateAnswer(
+  query: string,
+  context: string,
+  mode: ChatMode = "chat"
+): Promise<string> {
+  const systemPrompt = buildSystemPrompt(context, mode);
 
   const model = getChatModel();
 
@@ -145,4 +152,65 @@ ${context}
   ]);
 
   return response.content as string;
+}
+
+function toTextChunk(content: unknown): string {
+  if (typeof content === "string") {
+    return content;
+  }
+
+  if (Array.isArray(content)) {
+    return content
+      .map((part) => {
+        if (typeof part === "string") return part;
+        if (part && typeof part === "object" && "text" in part) {
+          return String((part as { text?: unknown }).text ?? "");
+        }
+        return "";
+      })
+      .join("");
+  }
+
+  return "";
+}
+
+export async function generateAnswerStream(
+  query: string,
+  context: string,
+  mode: ChatMode = "chat",
+  onToken?: (token: string) => void
+): Promise<string> {
+  const systemPrompt = buildSystemPrompt(context, mode);
+  const model = getChatModel();
+  const messages = [new SystemMessage(systemPrompt), new HumanMessage(query)];
+
+  let streamedText = "";
+
+  try {
+    const stream = (await (model as any).stream(messages)) as AsyncIterable<{ content?: unknown }>;
+
+    for await (const chunk of stream) {
+      const token = toTextChunk(chunk.content);
+      if (!token) continue;
+      streamedText += token;
+      onToken?.(token);
+    }
+
+    if (streamedText) {
+      return streamedText;
+    }
+  } catch (error) {
+    if (streamedText) {
+      throw error;
+    }
+  }
+
+  const response = await model.invoke(messages);
+  const answer = response.content as string;
+
+  if (answer) {
+    onToken?.(answer);
+  }
+
+  return answer;
 }

@@ -10,6 +10,7 @@ import { generateAnswer } from "../ai/ai.service";
 import { ApiResponse } from "../utils/api-response";
 import { ApiError } from "../utils/api-error";
 import { asyncHandler } from "../utils/async-handler";
+import { initSseResponse, sendSseEvent } from "../utils/sse";
 import { repositoryIntakeSchema } from "../validators/repository.validator";
 
 // ── Multer setup — store ZIP to tmp/uploads/ ─────────────────────────────────
@@ -65,21 +66,15 @@ export async function analyzeRepositoryStreamController(
     return;
   }
 
-  response.setHeader("Content-Type", "text/event-stream");
-  response.setHeader("Cache-Control", "no-cache");
-  response.setHeader("Connection", "keep-alive");
-  response.setHeader("X-Accel-Buffering", "no");
-  response.flushHeaders();
-
-  const send = (event: string, data: object) => {
-    response.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-  };
+  initSseResponse(response);
 
   try {
-    const repository = await analyzeRepositoryWithProgress(parseResult.data, send);
-    send("done", { repository });
+    const repository = await analyzeRepositoryWithProgress(parseResult.data, (event, data) => {
+      sendSseEvent(response, event, data);
+    });
+    sendSseEvent(response, "done", { repository });
   } catch (err: any) {
-    send("error", { message: err?.message ?? "Indexing failed" });
+    sendSseEvent(response, "error", { message: err?.message ?? "Indexing failed" });
   } finally {
     response.end();
   }
@@ -96,21 +91,15 @@ export async function analyzeZipStreamController(
     return;
   }
 
-  response.setHeader("Content-Type", "text/event-stream");
-  response.setHeader("Cache-Control", "no-cache");
-  response.setHeader("Connection", "keep-alive");
-  response.setHeader("X-Accel-Buffering", "no");
-  response.flushHeaders();
-
-  const send = (event: string, data: object) => {
-    response.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-  };
+  initSseResponse(response);
 
   try {
-    const repository = await analyzeZipWithProgress(file.path, file.originalname, send);
-    send("done", { repository });
+    const repository = await analyzeZipWithProgress(file.path, file.originalname, (event, data) => {
+      sendSseEvent(response, event, data);
+    });
+    sendSseEvent(response, "done", { repository });
   } catch (err: any) {
-    send("error", { message: err?.message ?? "ZIP indexing failed" });
+    sendSseEvent(response, "error", { message: err?.message ?? "ZIP indexing failed" });
   } finally {
     response.end();
   }

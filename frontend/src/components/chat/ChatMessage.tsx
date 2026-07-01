@@ -11,22 +11,35 @@ function formatTime(date: Date): string {
 
 export function ChatMessage({ message }: { message: ChatMessageType }) {
   const isUser = message.role === "user";
+  const isPlaceholderAssistant = !isUser && !message.content.trim();
+  const isDiagramMessage = message.mode === "diagram";
+
+  if (isPlaceholderAssistant) {
+    return null;
+  }
+
+  const bubbleWidthClass = isDiagramMessage || message.mode === "overview"
+    ? "w-full max-w-none"
+    : "max-w-[85%] md:max-w-[78%]";
 
   return (
-    <div className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
+    <div
+      data-chat-message="true"
+      className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"} ${isDiagramMessage ? "w-full" : ""}`}
+    >
       {!isUser && (
         <div className="w-7 h-7 rounded-lg bg-[#CCD67F]/[0.1] border border-[#CCD67F]/20 flex items-center justify-center shrink-0 mt-0.5">
           <Sparkles className="w-3.5 h-3.5 text-[#CCD67F]" strokeWidth={1.5} />
         </div>
       )}
 
-      <div className={`flex flex-col gap-1 ${isUser ? "items-end" : "items-start"} ${message.mode === "overview" ? "w-full max-w-none" : "max-w-[85%] md:max-w-[78%]"}`}>
+      <div className={`flex flex-col gap-1 ${isUser ? "items-end" : "items-start"} ${bubbleWidthClass} ${isDiagramMessage ? "flex-1" : ""}`}>
         {isUser ? (
           <div className="rounded-2xl rounded-tr-md bg-white/[0.06] border border-white/[0.08] px-4 py-3 text-[14px] text-[#e3e2de] leading-relaxed">
             {message.content}
           </div>
         ) : (
-          <div className="chat-prose w-full">
+          <div className={`chat-prose w-full ${isDiagramMessage ? "max-w-none" : ""}`}>
             <ReactMarkdown
               components={{
                 // ── Headings — compact sizes for chat context ──────────────

@@ -16,9 +16,17 @@ export function ChatWindow({ onSuggestion }: { onSuggestion?: (text: string) => 
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (!scrollRef.current) {
+      return;
     }
+
+    const lastMessage = scrollRef.current.querySelector('[data-chat-message="true"]:last-of-type');
+    if (lastMessage instanceof HTMLElement) {
+      lastMessage.scrollIntoView({ block: "center", inline: "nearest", behavior: "auto" });
+      return;
+    }
+
+    scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, isStreaming]);
 
   // ── Empty state ─────────────────────────────────────────────────────────

@@ -6,7 +6,8 @@ interface ChatState {
   isStreaming: boolean;
   activeMode: ChatMode;
 
-  addMessage: (msg: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
+  addMessage: (msg: Omit<ChatMessage, 'id' | 'timestamp'>) => string;
+  updateMessage: (id: string, patch: Partial<Omit<ChatMessage, 'id' | 'timestamp'>>) => void;
   clearMessages: () => void;
   setStreaming: (v: boolean) => void;
   setMode: (mode: ChatMode) => void;
@@ -18,11 +19,21 @@ export const useChatStore = create<ChatState>((set) => ({
   activeMode: 'chat',
 
   addMessage: (msg) =>
+    {
+      const id = crypto.randomUUID();
+      set((state) => ({
+        messages: [
+          ...state.messages,
+          { ...msg, id, timestamp: new Date() },
+        ],
+      }));
+      return id;
+    },
+  updateMessage: (id, patch) =>
     set((state) => ({
-      messages: [
-        ...state.messages,
-        { ...msg, id: crypto.randomUUID(), timestamp: new Date() },
-      ],
+      messages: state.messages.map((message) =>
+        message.id === id ? { ...message, ...patch } : message
+      ),
     })),
   clearMessages: () => set({ messages: [] }),
   setStreaming: (v) => set({ isStreaming: v }),

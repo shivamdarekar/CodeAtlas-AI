@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
 import { useRepoStore } from "@/store/repo-store";
 import { GitBranch, Upload, Check, Loader2, AlertCircle, FileArchive, X } from "lucide-react";
 import type { IndexedRepository } from "@/types";
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api/v1";
+import { API_BASE_URL } from "@/lib/api";
+import { consumeSseStream } from "@/lib/sse";
 
 const formSchema = z.object({
   repoUrl: z.string().url("Please enter a valid GitHub URL.").refine(
@@ -39,39 +39,6 @@ const IDLE_STEPS: StepsMap = {
   clone: { status: "idle" }, scan: { status: "idle" }, chunk: { status: "idle" },
   embed: { status: "idle" }, upsert: { status: "idle" }, summary: { status: "idle" },
 };
-
-// ── SSE reader helper ─────────────────────────────────────────────────────────
-async function readSSEStream(
-  res: Response,
-  onProgress: (step: StepKey, detail?: string, pct?: number) => void,
-  onDone: (repo: IndexedRepository) => void,
-  onError: (msg: string) => void
-) {
-  const reader = res.body!.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const parts = buffer.split("\n\n");
-    buffer = parts.pop() ?? "";
-
-    for (const part of parts) {
-      if (!part.trim()) continue;
-      const eventMatch = part.match(/^event:\s*(\S+)/m);
-      const dataMatch  = part.match(/^data:\s*(.+)/m);
-      if (!eventMatch || !dataMatch) continue;
-      const event = eventMatch[1];
-      const data  = JSON.parse(dataMatch[1]);
-
-      if (event === "progress") onProgress(data.step, data.detail, data.pct);
-      if (event === "done")     onDone(data.repository);
-      if (event === "error")    onError(data.message ?? "Indexing failed.");
-    }
-  }
-}
 
 export function RepoIndexForm() {
   const router = useRouter();
@@ -132,13 +99,17 @@ export function RepoIndexForm() {
   const onGitHubSubmit = async (values: FormValues) => {
     startIndexing();
     try {
-      const res = await fetch(`${BASE_URL}/repos/analyze/stream`, {
+      const res = await fetch(`${API_BASE_URL}/repos/analyze/stream`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ repoUrl: values.repoUrl, branch: values.branch }),
       });
       if (!res.ok || !res.body) throw new Error((await res.json().catch(() => ({}))).message ?? "Failed to start.");
-      await readSSEStream(res, handleProgress, handleDone, handleStreamError);
+      await consumeSseStream(res, (event, data) => {
+        if (event === "progress") handleProgress(data.step, data.detail, data.pct);
+        if (event === "done") handleDone(data.repository);
+        if (event === "error") handleStreamError(data.message ?? "Indexing failed.");
+      });
     } catch (err: any) {
       handleStreamError(err.message ?? "An error occurred.");
     }
@@ -151,12 +122,16 @@ export function RepoIndexForm() {
     try {
       const formData = new FormData();
       formData.append("zipFile", zipFile);
-      const res = await fetch(`${BASE_URL}/repos/upload/stream`, {
+      const res = await fetch(`${API_BASE_URL}/repos/upload/stream`, {
         method: "POST",
         body: formData,
       });
       if (!res.ok || !res.body) throw new Error((await res.json().catch(() => ({}))).message ?? "Failed to start.");
-      await readSSEStream(res, handleProgress, handleDone, handleStreamError);
+      await consumeSseStream(res, (event, data) => {
+        if (event === "progress") handleProgress(data.step, data.detail, data.pct);
+        if (event === "done") handleDone(data.repository);
+        if (event === "error") handleStreamError(data.message ?? "Indexing failed.");
+      });
     } catch (err: any) {
       handleStreamError(err.message ?? "An error occurred.");
     }

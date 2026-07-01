@@ -1,16 +1,21 @@
 import { checkNamespaceExists } from "../vectorstore/pinecone.service";
 import { retrieveRelevantChunks } from "../retrieval/retrieval.service";
-import { generateAnswer } from "../ai/ai.service";
+import { generateAnswer, generateAnswerStream } from "../ai/ai.service";
 import { ApiError } from "../utils/api-error";
 import { loadRepositorySummary } from "./summary.service";
-import type { ChatMode, ChatResponse } from "../types";
+import type { ChatMode, ChatResponse, ChatSource } from "../types";
 
-export async function askQuestion(
+interface ResolvedChatContext {
+  context: string;
+  sources: ChatSource[];
+  fallbackAnswer?: string;
+}
+
+async function resolveChatContext(
   namespace: string,
   query: string,
-  mode: ChatMode = "chat"
-): Promise<ChatResponse> {
-  // 1. Namespace Validation
+  mode: ChatMode
+): Promise<ResolvedChatContext> {
   const exists = await checkNamespaceExists(namespace);
   if (!exists) {
     throw new ApiError(404, `Repository namespace '${namespace}' not found or empty.`);
@@ -22,30 +27,70 @@ export async function askQuestion(
       throw new ApiError(404, `Repository summary for '${namespace}' not found. Please re-index the repository.`);
     }
 
-    const answer = await generateAnswer(query, JSON.stringify(summary, null, 2), mode);
     return {
-      answer,
+      context: JSON.stringify(summary, null, 2),
       sources: [],
     };
   }
 
-  // 2. Retrieve Context (for chat/flow/diagram)
   const retrieval = await retrieveRelevantChunks(namespace, query, mode);
 
-  // 3. Fallback when no chunks found
   if (retrieval.isEmpty) {
     return {
-      answer: "I couldn't find relevant code related to this question in the repository.",
+      context: "",
       sources: [],
+      fallbackAnswer: "I couldn't find relevant code related to this question in the repository.",
     };
   }
 
-  // 4. AI Service Generation
-  const answer = await generateAnswer(query, retrieval.formattedContext, mode);
+  return {
+    context: retrieval.formattedContext,
+    sources: retrieval.sources,
+  };
+}
 
-  // 5. Return structured response
+export async function askQuestion(
+  namespace: string,
+  query: string,
+  mode: ChatMode = "chat"
+): Promise<ChatResponse> {
+  const resolved = await resolveChatContext(namespace, query, mode);
+
+  if (resolved.fallbackAnswer) {
+    return {
+      answer: resolved.fallbackAnswer,
+      sources: resolved.sources,
+    };
+  }
+
+  const answer = await generateAnswer(query, resolved.context, mode);
+
   return {
     answer,
-    sources: retrieval.sources,
+    sources: resolved.sources,
+  };
+}
+
+export async function askQuestionStream(
+  namespace: string,
+  query: string,
+  mode: ChatMode = "chat",
+  onToken: (token: string) => void
+): Promise<ChatResponse> {
+  const resolved = await resolveChatContext(namespace, query, mode);
+
+  if (resolved.fallbackAnswer) {
+    onToken(resolved.fallbackAnswer);
+    return {
+      answer: resolved.fallbackAnswer,
+      sources: resolved.sources,
+    };
+  }
+
+  const answer = await generateAnswerStream(query, resolved.context, mode, onToken);
+
+  return {
+    answer,
+    sources: resolved.sources,
   };
 }

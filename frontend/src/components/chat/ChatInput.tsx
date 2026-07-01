@@ -4,6 +4,7 @@ import { Send, Loader2 } from "lucide-react";
 import { useChatStore } from "@/store/chat-store";
 import { useRepoStore } from "@/store/repo-store";
 import { api } from "@/lib/api";
+import { consumeSseStream } from "@/lib/sse";
 import { toast } from "sonner";
 import { ModeSelector } from "./ModeSelector";
 
@@ -13,7 +14,7 @@ export interface ChatInputHandle {
 
 export const ChatInput = forwardRef<ChatInputHandle>((_, ref) => {
   const [query, setQuery] = useState("");
-  const { activeMode, addMessage, setStreaming, isStreaming } = useChatStore();
+  const { activeMode, addMessage, updateMessage, setStreaming, isStreaming } = useChatStore();
   const { activeRepo } = useRepoStore();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -44,22 +45,60 @@ export const ChatInput = forwardRef<ChatInputHandle>((_, ref) => {
     if (textareaRef.current) textareaRef.current.style.height = "auto";
 
     addMessage({ role: "user", content: currentQuery, mode: activeMode });
+    const assistantMessageId = addMessage({ role: "assistant", content: "", mode: activeMode });
     setStreaming(true);
+    let streamedAnswer = "";
 
     try {
-      const response = await api.chat(activeRepo.namespace, currentQuery, activeMode);
-      if ((response.data.statusCode === 200 || response.data.statusCode === 201) && response.data.data) {
-        addMessage({
-          role: "assistant",
-          content: response.data.data.answer,
-          mode: activeMode,
-          chunksUsed: response.data.data.chunksUsed,
+      const response = await api.chatStream(activeRepo.namespace, currentQuery, activeMode);
+
+      if (!response.ok) {
+        let message = "Failed to get a response.";
+        try {
+          const payload = await response.json();
+          message = payload?.message ?? message;
+        } catch {
+          // Fall back to the default message.
+        }
+        throw new Error(message);
+      }
+
+      await consumeSseStream(response, (event, data) => {
+        if (event === "delta" && typeof data?.chunk === "string") {
+          streamedAnswer += data.chunk;
+          updateMessage(assistantMessageId, { content: streamedAnswer });
+          return;
+        }
+
+        if (event === "done" && typeof data?.answer === "string") {
+          streamedAnswer = data.answer;
+          updateMessage(assistantMessageId, {
+            content: streamedAnswer,
+            chunksUsed: data?.chunksUsed,
+          });
+          return;
+        }
+
+        if (event === "error") {
+          throw new Error(data?.message ?? "Failed to get a response.");
+        }
+      });
+
+      if (!streamedAnswer) {
+        updateMessage(assistantMessageId, {
+          content: "I couldn't generate a response. Please try again.",
         });
       } else {
-        toast.error(response.data.message || "Failed to get a response.");
+        updateMessage(assistantMessageId, { content: streamedAnswer });
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to get a response. Please try again.");
+      const message = err?.response?.data?.message || err?.message || "Failed to get a response. Please try again.";
+      if (!streamedAnswer) {
+        updateMessage(assistantMessageId, {
+          content: "I couldn't generate a response. Please try again.",
+        });
+      }
+      toast.error(message);
     } finally {
       setStreaming(false);
     }
