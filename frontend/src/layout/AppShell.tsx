@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useRepoStore } from "@/store/repo-store";
 import { useUiStore } from "@/store/ui-store";
 import { ChatSidebar } from "./ChatSidebar";
-import { ChatWindow } from "@/components/chat/ChatWindow";
+import { ChatWindow, type ChatWindowHandle } from "@/components/chat/ChatWindow";
 import { ChatInput, type ChatInputHandle } from "@/components/chat/ChatInput";
 import CodebaseGraph from "@/components/diagrams/CodebaseGraph";
 import { api } from "@/lib/api";
@@ -16,6 +16,7 @@ export function AppShell({ namespace }: { namespace: string }) {
   const { activeRepo, repoSummary, setRepoSummary, _hasHydrated } = useRepoStore();
   const { activeView } = useUiStore();
   const chatInputRef = useRef<ChatInputHandle>(null);
+  const chatWindowRef = useRef<ChatWindowHandle>(null);
 
   useEffect(() => {
     if (!_hasHydrated) return;
@@ -68,9 +69,9 @@ export function AppShell({ namespace }: { namespace: string }) {
         {/* Main content */}
         {activeView === "chat" ? (
           <>
-            <ChatWindow onSuggestion={(text) => chatInputRef.current?.fill(text)} />
+            <ChatWindow ref={chatWindowRef} onSuggestion={(text) => chatInputRef.current?.fill(text)} />
             <div className="shrink-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a] to-transparent pt-2 z-10">
-              <ChatInput ref={chatInputRef} />
+              <ChatInput ref={chatInputRef} onSubmit={() => chatWindowRef.current?.scrollForNewMessage()} />
             </div>
           </>
         ) : (

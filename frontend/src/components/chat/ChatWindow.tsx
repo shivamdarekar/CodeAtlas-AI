@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import { useChatStore } from "@/store/chat-store";
 import { ChatMessage } from "./ChatMessage";
 import { MessageSquare, GitBranch, LayoutDashboard, Share2 } from "lucide-react";
@@ -11,23 +11,31 @@ const SUGGESTIONS = [
   { label: "How does error handling work?", icon: MessageSquare },
 ];
 
-export function ChatWindow({ onSuggestion }: { onSuggestion?: (text: string) => void }) {
+export interface ChatWindowHandle {
+  scrollForNewMessage: () => void;
+}
+
+export const ChatWindow = forwardRef<ChatWindowHandle, { onSuggestion?: (text: string) => void }>(
+  function ChatWindow({ onSuggestion }, ref) {
   const { messages, isStreaming } = useChatStore();
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  useImperativeHandle(ref, () => ({
+    scrollForNewMessage: () => {
+      const container = scrollRef.current;
+      if (!container) return;
+      // Scroll so ~35% of viewport height remains below — user message sits
+      // in upper area and the response streams in visibly below it
+      const target = container.scrollHeight - container.clientHeight * 0.65;
+      container.scrollTo({ top: target, behavior: "smooth" });
+    },
+  }));
+
+  // Only scroll to bottom on initial load
   useEffect(() => {
-    if (!scrollRef.current) {
-      return;
-    }
-
-    const lastMessage = scrollRef.current.querySelector('[data-chat-message="true"]:last-of-type');
-    if (lastMessage instanceof HTMLElement) {
-      lastMessage.scrollIntoView({ block: "center", inline: "nearest", behavior: "auto" });
-      return;
-    }
-
-    scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages, isStreaming]);
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, []);
 
   // ── Empty state ─────────────────────────────────────────────────────────
   if (messages.length === 0) {
@@ -76,7 +84,7 @@ export function ChatWindow({ onSuggestion }: { onSuggestion?: (text: string) => 
 
       <div
         ref={scrollRef}
-        className="h-full overflow-y-auto scroll-smooth px-4 md:px-8 py-6"
+        className="h-full overflow-y-auto scroll-auto px-4 md:px-8 py-6"
       >
         <div className="max-w-3xl mx-auto w-full flex flex-col gap-6">
           {messages.map((msg) => (
@@ -99,6 +107,8 @@ export function ChatWindow({ onSuggestion }: { onSuggestion?: (text: string) => 
               </div>
             </div>
           )}
+
+          <div aria-hidden="true" />
         </div>
       </div>
 
@@ -106,4 +116,6 @@ export function ChatWindow({ onSuggestion }: { onSuggestion?: (text: string) => 
       <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-[#0a0a0a] to-transparent z-10 pointer-events-none" />
     </div>
   );
-}
+});
+
+ChatWindow.displayName = "ChatWindow";

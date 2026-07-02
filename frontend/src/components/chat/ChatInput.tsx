@@ -12,7 +12,7 @@ export interface ChatInputHandle {
   fill: (text: string) => void;
 }
 
-export const ChatInput = forwardRef<ChatInputHandle>((_, ref) => {
+export const ChatInput = forwardRef<ChatInputHandle, { onSubmit?: () => void }>(({ onSubmit }, ref) => {
   const [query, setQuery] = useState("");
   const { activeMode, addMessage, updateMessage, setStreaming, isStreaming } = useChatStore();
   const { activeRepo } = useRepoStore();
@@ -46,8 +46,29 @@ export const ChatInput = forwardRef<ChatInputHandle>((_, ref) => {
 
     addMessage({ role: "user", content: currentQuery, mode: activeMode });
     const assistantMessageId = addMessage({ role: "assistant", content: "", mode: activeMode });
+    // Wait two frames: first for React to commit the new message to DOM,
+    // second for the browser to finish layout so scrollHeight is updated
+    requestAnimationFrame(() => requestAnimationFrame(() => onSubmit?.()));
     setStreaming(true);
     let streamedAnswer = "";
+    let flushFrame: number | null = null;
+
+    const flushStreamedAnswer = () => {
+      if (flushFrame !== null) return;
+
+      flushFrame = window.requestAnimationFrame(() => {
+        flushFrame = null;
+        updateMessage(assistantMessageId, { content: streamedAnswer });
+      });
+    };
+
+    const finalizeStreamedAnswer = () => {
+      if (flushFrame !== null) {
+        window.cancelAnimationFrame(flushFrame);
+        flushFrame = null;
+      }
+      updateMessage(assistantMessageId, { content: streamedAnswer });
+    };
 
     try {
       const response = await api.chatStream(activeRepo.namespace, currentQuery, activeMode);
@@ -66,16 +87,14 @@ export const ChatInput = forwardRef<ChatInputHandle>((_, ref) => {
       await consumeSseStream(response, (event, data) => {
         if (event === "delta" && typeof data?.chunk === "string") {
           streamedAnswer += data.chunk;
-          updateMessage(assistantMessageId, { content: streamedAnswer });
+          flushStreamedAnswer();
           return;
         }
 
         if (event === "done" && typeof data?.answer === "string") {
           streamedAnswer = data.answer;
-          updateMessage(assistantMessageId, {
-            content: streamedAnswer,
-            chunksUsed: data?.chunksUsed,
-          });
+          finalizeStreamedAnswer();
+          updateMessage(assistantMessageId, { chunksUsed: data?.chunksUsed });
           return;
         }
 
@@ -89,10 +108,14 @@ export const ChatInput = forwardRef<ChatInputHandle>((_, ref) => {
           content: "I couldn't generate a response. Please try again.",
         });
       } else {
-        updateMessage(assistantMessageId, { content: streamedAnswer });
+        finalizeStreamedAnswer();
       }
     } catch (err: any) {
       const message = err?.response?.data?.message || err?.message || "Failed to get a response. Please try again.";
+      if (flushFrame !== null) {
+        window.cancelAnimationFrame(flushFrame);
+        flushFrame = null;
+      }
       if (!streamedAnswer) {
         updateMessage(assistantMessageId, {
           content: "I couldn't generate a response. Please try again.",
